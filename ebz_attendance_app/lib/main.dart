@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
@@ -12,27 +13,32 @@ import 'views/member/member_dashboard.dart';
 import 'views/auth/change_password_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  try {
-    if (kIsWeb) {
-      await Firebase.initializeApp(
-        options: const FirebaseOptions(
-          apiKey: "AIzaSyCoks37eTygyAdNPcUwqCOoPKOQxFNG_ZA",
-          authDomain: "ebz-attendance.firebaseapp.com",
-          projectId: "ebz-attendance",
-          storageBucket: "ebz-attendance.firebasestorage.app",
-          messagingSenderId: "803173085858",
-          appId: "1:803173085858:web:2031f11a69cd9994bdddfb",
-        ),
-      );
-    } else {
-      await Firebase.initializeApp();
+  runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    try {
+      if (kIsWeb) {
+        await Firebase.initializeApp(
+          options: const FirebaseOptions(
+            apiKey: "AIzaSyCoks37eTygyAdNPcUwqCOoPKOQxFNG_ZA",
+            authDomain: "ebz-attendance.firebaseapp.com",
+            projectId: "ebz-attendance",
+            storageBucket: "ebz-attendance.firebasestorage.app",
+            messagingSenderId: "803173085858",
+            appId: "1:803173085858:web:2031f11a69cd9994bdddfb",
+          ),
+        );
+      } else {
+        await Firebase.initializeApp();
+      }
+      runApp(const MyApp());
+    } catch (e, stackTrace) {
+      debugPrint('Firebase initialization failed: $e');
+      runApp(ErrorApp(error: e.toString(), stackTrace: stackTrace));
     }
-    runApp(const MyApp());
-  } catch (e, stackTrace) {
-    debugPrint('Firebase initialization failed: $e');
-    runApp(ErrorApp(error: e.toString(), stackTrace: stackTrace));
-  }
+  }, (error, stack) {
+    debugPrint('Uncaught Error: $error');
+    runApp(ErrorApp(error: error.toString(), stackTrace: stack));
+  });
 }
 
 class MyApp extends StatelessWidget {

@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_account.dart';
 import 'firestore_service.dart';
@@ -44,15 +45,24 @@ class AuthService {
   // Register a new user (usually called by admin)
   Future<UserAccount?> registerMember(UserAccount member, String password) async {
     try {
-      // Note: Admin registering a member might sign the admin out if using standard createUserWithEmailAndPassword.
-      // In a real app, this should be done via Cloud Functions to avoid session swapping,
-      // or by using a secondary Firebase app instance.
-      // For MVP, we'll assume the admin is adding them.
-      
-      UserCredential result = await _auth.createUserWithEmailAndPassword(
+      // Use a secondary app instance to create the user without signing out the admin
+      FirebaseApp secondaryApp;
+      try {
+        secondaryApp = Firebase.app('secondary');
+      } catch (e) {
+        secondaryApp = await Firebase.initializeApp(
+          name: 'secondary',
+          options: Firebase.app().options,
+        );
+      }
+
+      final secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+
+      UserCredential result = await secondaryAuth.createUserWithEmailAndPassword(
         email: member.email,
         password: password,
       );
+      
       User? user = result.user;
       if (user != null) {
         UserAccount newMember = UserAccount(
@@ -66,14 +76,22 @@ class AuthService {
           baseSalary: member.baseSalary,
           workingDays: member.workingDays,
           isActive: true,
+          // Explicitly set isFirstLogin to true for new members so they change password
+          isFirstLogin: true, 
         );
+        // This saveUser call uses the DEFAULT app instance, which is still the Admin.
+        // Therefore, it passes the 'isAdmin()' security rule.
         await _firestoreService.saveUser(newMember);
+        
+        // Sign out the secondary instance to be clean
+        await secondaryAuth.signOut();
+        
         return newMember;
       }
       return null;
     } catch (e) {
       print('Error in registerMember: $e');
-      return null;
+      rethrow; 
     }
   }
 
