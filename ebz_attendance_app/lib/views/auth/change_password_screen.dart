@@ -14,21 +14,30 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _confirmController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-
+  
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _confirmController.dispose();
+    super.dispose();
+  }
+  
   void _handleChange() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      bool success = await Provider.of<AuthProvider>(context, listen: false)
-          .updatePassword(_passwordController.text.trim());
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final messenger = ScaffoldMessenger.of(context);
+      
+      bool success = await authProvider.updatePassword(_passwordController.text.trim());
       
       if (mounted) {
         setState(() => _isLoading = false);
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(content: Text('Password updated successfully!')),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
+          messenger.showSnackBar(
             const SnackBar(content: Text('Failed to update password.')),
           );
         }

@@ -1,4 +1,4 @@
-package com.example.ebz_attendance_app
+package com.ebz.ebz_attendance_app
 
 import io.flutter.embedding.android.FlutterActivity
 

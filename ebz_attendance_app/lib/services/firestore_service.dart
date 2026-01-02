@@ -69,6 +69,22 @@ class FirestoreService {
     return snapshot.docs.map((doc) => AttendanceRecord.fromMap(doc.data())).toList();
   }
 
+  Future<void> deleteAttendance(String userId, DateTime date) async {
+    DateTime startOfDay = DateTime(date.year, date.month, date.day);
+    DateTime endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+    
+    var snapshot = await _db
+        .collection('attendance')
+        .where('userId', isEqualTo: userId)
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+        .get();
+        
+    for (var doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
+  }
+
   // --- Rules Methods ---
 
   Future<void> saveRules(AppRules rules) async {

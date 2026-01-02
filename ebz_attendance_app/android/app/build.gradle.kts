@@ -25,7 +25,7 @@ android {
         applicationId = "com.ebz.ebz_attendance_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = 23
+        minSdk = flutter.minSdkVersion // DO NOT CHANGE: Firebase requires minSdk 23+ to avoid crashes
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

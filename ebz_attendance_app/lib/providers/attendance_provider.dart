@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../models/attendance_record.dart';
@@ -12,27 +13,36 @@ class AttendanceProvider with ChangeNotifier {
   
   AttendanceRecord? _todayRecord;
   bool _isLoading = false;
+  StreamSubscription? _attendanceSub;
 
   AttendanceRecord? get todayRecord => _todayRecord;
   bool get isLoading => _isLoading;
+
+  @override
+  void dispose() {
+    _attendanceSub?.cancel();
+    super.dispose();
+  }
 
   Future<void> loadTodayRecord(String userId) async {
     _isLoading = true;
     notifyListeners();
     
+    await _attendanceSub?.cancel();
+    
     final now = DateTime.now();
     final start = DateTime(now.year, now.month, now.day);
     final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
     
-    final records = await _firestoreService.getUserAttendance(userId, start, end).first;
-    if (records.isNotEmpty) {
-      _todayRecord = records.first;
-    } else {
-      _todayRecord = null;
-    }
-    
-    _isLoading = false;
-    notifyListeners();
+    _attendanceSub = _firestoreService.getUserAttendance(userId, start, end).listen((records) {
+      if (records.isNotEmpty) {
+        _todayRecord = records.first;
+      } else {
+        _todayRecord = null;
+      }
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   Future<String?> checkIn(UserAccount user) async {
@@ -41,12 +51,12 @@ class AttendanceProvider with ChangeNotifier {
 
     try {
       final rules = await _firestoreService.getRules();
-      if (rules != null && rules.allowedSsids.isNotEmpty) {
+      if (rules != null && rules.isWifiRestrictionEnabled && rules.allowedSsids.isNotEmpty) {
         bool isWifiValid = await _wifiService.validateWifi(rules.allowedSsids);
         if (!isWifiValid) {
           _isLoading = false;
           notifyListeners();
-          return 'Please connect to office WiFi to check in.';
+          return 'Access Denied: You must be connected to the Office WiFi ("${rules.allowedSsids.join(', ')}") to check in.';
         }
       }
 
@@ -80,6 +90,24 @@ class AttendanceProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return 'Error: $e';
+    }
+  }
+
+  // Admin clear status
+  Future<void> clearMemberStatus(String userId, DateTime date) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await _firestoreService.deleteAttendance(userId, date);
+      if (_todayRecord?.userId == userId) {
+        _todayRecord = null;
+      }
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
     }
   }
 

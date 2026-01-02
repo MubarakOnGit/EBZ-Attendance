@@ -17,6 +17,7 @@ class _MemberDashboardState extends State<MemberDashboard> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.uid;
       if (userId != null) {
         Provider.of<AttendanceProvider>(context, listen: false).loadTodayRecord(userId);

@@ -55,8 +55,9 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
       setState(() => _isLoading = false);
 
       if (result != null && mounted) {
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('New member registered successfully!'),
             backgroundColor: Colors.teal,

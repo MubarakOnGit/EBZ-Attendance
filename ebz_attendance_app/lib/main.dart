@@ -11,34 +11,54 @@ import 'models/user_account.dart';
 import 'views/admin/admin_dashboard.dart';
 import 'views/member/member_dashboard.dart';
 import 'views/auth/change_password_screen.dart';
+import 'app_theme.dart';
 
 void main() async {
-  runZonedGuarded<Future<void>>(() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    try {
-      if (kIsWeb) {
-        await Firebase.initializeApp(
-          options: const FirebaseOptions(
-            apiKey: "AIzaSyCoks37eTygyAdNPcUwqCOoPKOQxFNG_ZA",
-            authDomain: "ebz-attendance.firebaseapp.com",
-            projectId: "ebz-attendance",
-            storageBucket: "ebz-attendance.firebasestorage.app",
-            messagingSenderId: "803173085858",
-            appId: "1:803173085858:web:2031f11a69cd9994bdddfb",
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Show errors on screen instead of white screen in production
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text('UI Rendering Error', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Text(details.exceptionAsString(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.redAccent)),
+              ],
+            ),
           ),
-        );
-      } else {
-        await Firebase.initializeApp();
-      }
-      runApp(const MyApp());
-    } catch (e, stackTrace) {
-      debugPrint('Firebase initialization failed: $e');
-      runApp(ErrorApp(error: e.toString(), stackTrace: stackTrace));
+        ),
+      ),
+    );
+  };
+  
+  try {
+    if (kIsWeb) {
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: "AIzaSyCoks37eTygyAdNPcUwqCOoPKOQxFNG_ZA",
+          authDomain: "ebz-attendance.firebaseapp.com",
+          projectId: "ebz-attendance",
+          storageBucket: "ebz-attendance.firebasestorage.app",
+          messagingSenderId: "803173085858",
+          appId: "1:803173085858:web:2031f11a69cd9994bdddfb",
+        ),
+      );
+    } else {
+      await Firebase.initializeApp();
     }
-  }, (error, stack) {
-    debugPrint('Uncaught Error: $error');
-    runApp(ErrorApp(error: error.toString(), stackTrace: stack));
-  });
+    runApp(const MyApp());
+  } catch (e, stackTrace) {
+    debugPrint('Initialization error: $e\n$stackTrace');
+    runApp(ErrorApp(error: e.toString()));
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -54,16 +74,8 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'EbzAttendance',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.blueAccent,
-          brightness: Brightness.light,
-        ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.blueAccent,
-          brightness: Brightness.dark,
-        ),
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
         home: const AuthWrapper(),
       ),
     );

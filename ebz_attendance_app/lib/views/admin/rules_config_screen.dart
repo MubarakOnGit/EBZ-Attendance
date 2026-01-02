@@ -36,6 +36,7 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
         officeEndTime: const TimeOfDay(hour: 18, minute: 0),
         lunchStartTime: const TimeOfDay(hour: 13, minute: 0),
         lunchEndTime: const TimeOfDay(hour: 14, minute: 0),
+        isWifiRestrictionEnabled: false,
         weeklySchedule: {},
       );
       _graceController.text = _rules!.gracePeriodMinutes.toString();
@@ -55,6 +56,7 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
         officeEndTime: _rules!.officeEndTime,
         lunchStartTime: _rules!.lunchStartTime,
         lunchEndTime: _rules!.lunchEndTime,
+        isWifiRestrictionEnabled: _rules!.isWifiRestrictionEnabled,
         weeklySchedule: _rules!.weeklySchedule,
       );
       await _firestoreService.saveRules(updatedRules);
@@ -133,12 +135,36 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
                     title: 'WiFi Restrictions',
                     description: 'Members must be connected to these SSIDs to check-in.',
                     width: isWide ? (constraints.maxWidth - 24) / 2 : constraints.maxWidth,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Enable WiFi Restriction', style: TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: const Text('Users must be connected to these networks to check in'),
+                            value: _rules!.isWifiRestrictionEnabled,
+                            onChanged: (val) {
+                              setState(() {
+                                _rules = AppRules(
+                                  allowedSsids: _rules!.allowedSsids,
+                                  allowedBssids: _rules!.allowedBssids,
+                                  gracePeriodMinutes: _rules!.gracePeriodMinutes,
+                                  deductionPerMinute: _rules!.deductionPerMinute,
+                                  officeStartTime: _rules!.officeStartTime,
+                                  officeEndTime: _rules!.officeEndTime,
+                                  lunchStartTime: _rules!.lunchStartTime,
+                                  lunchEndTime: _rules!.lunchEndTime,
+                                  isWifiRestrictionEnabled: val,
+                                  weeklySchedule: _rules!.weeklySchedule,
+                                );
+                              });
+                            },
+                          ),
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
                               child: TextField(
                                 controller: _ssidController,
                                 decoration: InputDecoration(

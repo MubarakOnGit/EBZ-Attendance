@@ -9,6 +9,7 @@ class AppRules {
   final TimeOfDay officeEndTime;
   final TimeOfDay lunchStartTime;
   final TimeOfDay lunchEndTime;
+  final bool isWifiRestrictionEnabled;
   final Map<int, DaySchedule> weeklySchedule; // 1 = Monday, 7 = Sunday
 
   AppRules({
@@ -20,6 +21,7 @@ class AppRules {
     required this.officeEndTime,
     required this.lunchStartTime,
     required this.lunchEndTime,
+    this.isWifiRestrictionEnabled = false,
     required this.weeklySchedule,
   });
 
@@ -33,6 +35,7 @@ class AppRules {
       'officeEndTime': '${officeEndTime.hour}:${officeEndTime.minute}',
       'lunchStartTime': '${lunchStartTime.hour}:${lunchStartTime.minute}',
       'lunchEndTime': '${lunchEndTime.hour}:${lunchEndTime.minute}',
+      'isWifiRestrictionEnabled': isWifiRestrictionEnabled,
       'weeklySchedule': weeklySchedule.map((key, value) => MapEntry(key.toString(), value.toMap())),
     };
   }
@@ -52,6 +55,7 @@ class AppRules {
       officeEndTime: parseTime(map['officeEndTime'] ?? '18:00'),
       lunchStartTime: parseTime(map['lunchStartTime'] ?? '13:00'),
       lunchEndTime: parseTime(map['lunchEndTime'] ?? '14:00'),
+      isWifiRestrictionEnabled: map['isWifiRestrictionEnabled'] ?? false,
       weeklySchedule: (map['weeklySchedule'] as Map<String, dynamic>? ?? {}).map(
         (key, value) => MapEntry(int.parse(key), DaySchedule.fromMap(value)),
       ),

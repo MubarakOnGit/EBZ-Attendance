@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/user_account.dart';
 import '../../services/firestore_service.dart';
 import 'add_member_screen.dart';
+import 'member_details_screen.dart';
 
 class MemberListScreen extends StatelessWidget {
   const MemberListScreen({super.key});
@@ -103,55 +104,74 @@ class MemberListScreen extends StatelessWidget {
         ],
         border: Border.all(color: Colors.blueGrey.withOpacity(0.05)),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: Colors.blueAccent.withOpacity(0.1),
-            child: Text(
-              member.name[0].toUpperCase(),
-              style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MemberDetailsScreen(user: member),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  member.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: Colors.blueAccent.withOpacity(0.1),
+                child: Text(
+                  member.name[0].toUpperCase(),
+                  style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 20),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'ID: ${member.employeeId}',
-                  style: TextStyle(color: Colors.blueGrey[400], fontSize: 13),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      member.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'ID: ${member.employeeId}',
+                      style: TextStyle(color: Colors.blueGrey[400], fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey[50],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        member.salaryType.name.toUpperCase(),
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey[700]),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.blueGrey[50],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    member.salaryType.name.toUpperCase(),
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey[700]),
-                  ),
-                ),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.blueGrey),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MemberDetailsScreen(user: member),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.edit_note_rounded, color: Colors.blueAccent),
-            onPressed: () {
-              // Edit member
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

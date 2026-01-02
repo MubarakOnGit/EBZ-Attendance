@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import 'member_list_screen.dart';
@@ -321,30 +322,103 @@ class AdminOverview extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 10))],
+        border: Border.all(color: Colors.blueGrey.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Recent Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              const Text('Today\'s Presence', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: () {}, 
+                icon: const Icon(Icons.refresh_rounded, size: 18), 
+                label: const Text('Refresh'),
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
           StreamBuilder<QuerySnapshot>(
-            stream: db.collection('attendance').orderBy('date', descending: true).limit(5).snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-              if (snapshot.data!.docs.isEmpty) return const Text('No recent activity found.');
-              
-              return ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: snapshot.data!.docs.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  var data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                  return ListTile(
-                    leading: const CircleAvatar(child: Icon(Icons.person)),
-                    title: Text('Member ID: ${data['userId']}'),
-                    subtitle: Text('Status: ${data['status'] == 0 ? "Present" : "Late"}'),
-                    trailing: Text(data['checkIn'] ?? '--:--'),
+            stream: db.collection('users').where('role', isEqualTo: 1).snapshots(), // Members
+            builder: (context, userSnapshot) {
+              if (userSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+              if (!userSnapshot.hasData || userSnapshot.data!.docs.isEmpty) return const Text('No members found.');
+
+              final members = userSnapshot.data!.docs.map((doc) => UserAccount.fromMap(doc.data() as Map<String, dynamic>)).toList();
+
+              final today = DateTime.now();
+              final startOfDay = DateTime(today.year, today.month, today.day);
+              final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59);
+
+              return StreamBuilder<QuerySnapshot>(
+                stream: db.collection('attendance')
+                    .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+                    .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+                    .snapshots(),
+                builder: (context, attendanceSnapshot) {
+                  final records = (attendanceSnapshot.data?.docs ?? [])
+                      .map((doc) => AttendanceRecord.fromMap(doc.data() as Map<String, dynamic>))
+                      .toList();
+
+                  return ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: members.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final member = members[index];
+                      final record = records.where((r) => r.userId == member.uid).firstOrNull;
+                      bool isCheckIn = record != null;
+
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.blueAccent.withOpacity(0.1),
+                          child: Text(member.name[0].toUpperCase(), style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+                        ),
+                        title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text(
+                          isCheckIn 
+                            ? 'Checked In at ${DateFormat('hh:mm a').format(record.checkIn!)}' 
+                            : 'Not Checked In',
+                          style: TextStyle(color: isCheckIn ? Colors.teal : Colors.blueGrey[300], fontSize: 13),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isCheckIn) ...[
+                               Container(
+                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                 decoration: BoxDecoration(
+                                   color: (record.status == AttendanceStatus.present ? Colors.teal : Colors.orange).withOpacity(0.1),
+                                   borderRadius: BorderRadius.circular(6),
+                                 ),
+                                 child: Text(
+                                   record.status.name.toUpperCase(),
+                                   style: TextStyle(
+                                     fontSize: 10, 
+                                     fontWeight: FontWeight.bold, 
+                                     color: record.status == AttendanceStatus.present ? Colors.teal : Colors.orange[800],
+                                   ),
+                                 ),
+                               ),
+                               const SizedBox(width: 12),
+                            ],
+                            OutlinedButton(
+                              onPressed: isCheckIn ? () => _confirmReset(context, member, record) : null,
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.redAccent,
+                                side: isCheckIn ? const BorderSide(color: Colors.redAccent) : null,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: const Text('Reset', style: TextStyle(fontSize: 12)),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   );
                 },
               );
@@ -354,7 +428,37 @@ class AdminOverview extends StatelessWidget {
       ),
     );
   }
-}
+
+  void _confirmReset(BuildContext context, UserAccount member, AttendanceRecord record) {
+     showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Reset Status?'),
+        content: Text('Are you sure you want to clear the check-in status for ${member.name}? They will be able to check in again.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            onPressed: () async {
+              Navigator.pop(context);
+              final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
+              try {
+                await attendanceProvider.clearMemberStatus(member.uid, record.date);
+                if (context.mounted) {
+                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Status reset successfully.')));
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                }
+              }
+            },
+            child: const Text('Reset'),
+          ),
+        ],
+      ),
+    );
+  }
 
 class StatCard extends StatelessWidget {
   final String title;
