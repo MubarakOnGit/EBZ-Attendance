@@ -11,9 +11,12 @@ import 'views/member/member_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Note: Firebase.initializeApp() will fail without google-services.json
-  // User should provide their own Firebase configuration.
-  // await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase initialization failed: $e');
+    debugPrint('Ensure google-services.json (Android) or GoogleService-Info.plist (iOS) is present.');
+  }
   runApp(const MyApp());
 }
 

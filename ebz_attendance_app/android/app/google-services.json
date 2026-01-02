@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "803173085858",
+    "project_id": "ebz-attendance",
+    "storage_bucket": "ebz-attendance.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:803173085858:android:9bb0a09c4668b372bdddfb",
+        "android_client_info": {
+          "package_name": "com.ebz.ebz_attendance_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAw1PbGqUx0TTyhXF6LrcFlbpyNNAf32Jc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
