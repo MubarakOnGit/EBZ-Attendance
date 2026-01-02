@@ -49,6 +49,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -64,10 +66,67 @@ class AuthWrapper extends StatelessWidget {
       return const LoginScreen();
     }
 
-    if (authProvider.currentUser!.role == UserRole.admin) {
-      return const AdminDashboard();
+    final user = authProvider.currentUser!;
+
+    if (kIsWeb) {
+      if (user.role == UserRole.admin) {
+        return const AdminDashboard();
+      } else {
+        return const UnsupportedPlatformScreen(
+          message: 'Member access is available only on the mobile app.',
+        );
+      }
     } else {
-      return const MemberDashboard();
+      if (user.role == UserRole.member) {
+        return const MemberDashboard();
+      } else {
+        return const UnsupportedPlatformScreen(
+          message: 'Admin access is available only on the web portal.',
+        );
+      }
     }
+  }
+}
+
+class UnsupportedPlatformScreen extends StatelessWidget {
+  final String message;
+  const UnsupportedPlatformScreen({super.key, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Access Restricted'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => Provider.of<AuthProvider>(context, listen: false).logout(),
+          ),
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.phonelink_erase, size: 80, color: Colors.redAccent),
+              const SizedBox(height: 24),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Please use the appropriate device to access your dashboard.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
