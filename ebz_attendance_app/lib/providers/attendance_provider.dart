@@ -12,15 +12,19 @@ class AttendanceProvider with ChangeNotifier {
   final WifiService _wifiService = WifiService();
   
   AttendanceRecord? _todayRecord;
+  List<AttendanceRecord> _monthRecords = [];
   bool _isLoading = false;
   StreamSubscription? _attendanceSub;
+  StreamSubscription? _monthSub;
 
   AttendanceRecord? get todayRecord => _todayRecord;
+  List<AttendanceRecord> get monthRecords => _monthRecords;
   bool get isLoading => _isLoading;
 
   @override
   void dispose() {
     _attendanceSub?.cancel();
+    _monthSub?.cancel();
     super.dispose();
   }
 
@@ -41,6 +45,18 @@ class AttendanceProvider with ChangeNotifier {
         _todayRecord = null;
       }
       _isLoading = false;
+      notifyListeners();
+    });
+  }
+
+  Future<void> loadMonthRecords(String userId) async {
+    await _monthSub?.cancel();
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+
+    _monthSub = _firestoreService.getUserAttendance(userId, startOfMonth, endOfMonth).listen((records) {
+      _monthRecords = records;
       notifyListeners();
     });
   }

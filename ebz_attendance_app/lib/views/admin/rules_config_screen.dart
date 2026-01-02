@@ -14,6 +14,7 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
   final _ssidController = TextEditingController();
   final _graceController = TextEditingController();
   final _deductionController = TextEditingController();
+  final _lunchLimitController = TextEditingController();
 
   AppRules? _rules;
   bool _isLoading = true;
@@ -37,10 +38,15 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
         lunchStartTime: const TimeOfDay(hour: 13, minute: 0),
         lunchEndTime: const TimeOfDay(hour: 14, minute: 0),
         isWifiRestrictionEnabled: false,
+        isOvertimeEnabled: false,
+        isDeductionEnabled: false,
+        isLunchDeductionEnabled: false,
+        lunchLimitMinutes: 60,
         weeklySchedule: {},
       );
       _graceController.text = _rules!.gracePeriodMinutes.toString();
       _deductionController.text = _rules!.deductionPerMinute.toString();
+      _lunchLimitController.text = _rules!.lunchLimitMinutes.toString();
       _isLoading = false;
     });
   }
@@ -52,11 +58,15 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
         allowedBssids: _rules!.allowedBssids,
         gracePeriodMinutes: int.tryParse(_graceController.text) ?? 5,
         deductionPerMinute: double.tryParse(_deductionController.text) ?? 1.0,
+        lunchLimitMinutes: int.tryParse(_lunchLimitController.text) ?? 60,
         officeStartTime: _rules!.officeStartTime,
         officeEndTime: _rules!.officeEndTime,
         lunchStartTime: _rules!.lunchStartTime,
         lunchEndTime: _rules!.lunchEndTime,
         isWifiRestrictionEnabled: _rules!.isWifiRestrictionEnabled,
+        isOvertimeEnabled: _rules!.isOvertimeEnabled,
+        isDeductionEnabled: _rules!.isDeductionEnabled,
+        isLunchDeductionEnabled: _rules!.isLunchDeductionEnabled,
         weeklySchedule: _rules!.weeklySchedule,
       );
       await _firestoreService.saveRules(updatedRules);
@@ -104,7 +114,7 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text('Configure WiFi restrictions and salary deduction rules', 
+                  const Text('Configure office hours, lunch breaks, and penalty rules', 
                     style: TextStyle(color: Colors.grey, fontSize: 16)),
                 ],
               ),
@@ -132,6 +142,26 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
                 runSpacing: 24,
                 children: [
                   _buildSection(
+                    title: 'Office Hours',
+                    description: 'Set standard working and lunch times.',
+                    width: isWide ? (constraints.maxWidth - 24) / 2 : constraints.maxWidth,
+                    child: Column(
+                      children: [
+                        _buildTimeRow('Work Hours', _rules!.officeStartTime, _rules!.officeEndTime, (start, end) {
+                          setState(() {
+                            _rules = _copyRulesWith(officeStartTime: start, officeEndTime: end);
+                          });
+                        }),
+                        const Divider(height: 32),
+                        _buildTimeRow('Lunch Break', _rules!.lunchStartTime, _rules!.lunchEndTime, (start, end) {
+                          setState(() {
+                            _rules = _copyRulesWith(lunchStartTime: start, lunchEndTime: end);
+                          });
+                        }),
+                      ],
+                    ),
+                  ),
+                  _buildSection(
                     title: 'WiFi Restrictions',
                     description: 'Members must be connected to these SSIDs to check-in.',
                     width: isWide ? (constraints.maxWidth - 24) / 2 : constraints.maxWidth,
@@ -141,24 +171,9 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Enable WiFi Restriction', style: TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: const Text('Users must be connected to these networks to check in'),
+                            subtitle: const Text('Validate connection during check-in'),
                             value: _rules!.isWifiRestrictionEnabled,
-                            onChanged: (val) {
-                              setState(() {
-                                _rules = AppRules(
-                                  allowedSsids: _rules!.allowedSsids,
-                                  allowedBssids: _rules!.allowedBssids,
-                                  gracePeriodMinutes: _rules!.gracePeriodMinutes,
-                                  deductionPerMinute: _rules!.deductionPerMinute,
-                                  officeStartTime: _rules!.officeStartTime,
-                                  officeEndTime: _rules!.officeEndTime,
-                                  lunchStartTime: _rules!.lunchStartTime,
-                                  lunchEndTime: _rules!.lunchEndTime,
-                                  isWifiRestrictionEnabled: val,
-                                  weeklySchedule: _rules!.weeklySchedule,
-                                );
-                              });
-                            },
+                            onChanged: (val) => setState(() => _rules = _copyRulesWith(isWifiRestrictionEnabled: val)),
                           ),
                           const Divider(),
                           const SizedBox(height: 16),
@@ -204,22 +219,42 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
                     ),
                   ),
                   _buildSection(
-                    title: 'Deduction Rules',
-                    description: 'Set late-arrival grace periods and penalty rates.',
+                    title: 'Payroll Logic',
+                    description: 'Automate overtime and late-arrival deductions.',
                     width: isWide ? (constraints.maxWidth - 24) / 2 : constraints.maxWidth,
                     child: Column(
                       children: [
-                        _buildInputField(
-                          label: 'Grace Period (Minutes)',
-                          controller: _graceController,
-                          icon: Icons.timer_outlined,
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Enable Deductions', style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: const Text('Apply penalties for late arrivals'),
+                          value: _rules!.isDeductionEnabled,
+                          onChanged: (val) => setState(() => _rules = _copyRulesWith(isDeductionEnabled: val)),
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Enable Overtime', style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: const Text('Record hours worked beyond shift end'),
+                          value: _rules!.isOvertimeEnabled,
+                          onChanged: (val) => setState(() => _rules = _copyRulesWith(isOvertimeEnabled: val)),
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Strict Lunch Hour', style: TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: const Text('Deduct salary if break exceeds limit'),
+                          value: _rules!.isLunchDeductionEnabled,
+                          onChanged: (val) => setState(() => _rules = _copyRulesWith(isLunchDeductionEnabled: val)),
+                        ),
+                        const Divider(height: 32),
+                        Row(
+                          children: [
+                            Expanded(child: _buildInputField(label: 'Late Grace (Min)', controller: _graceController, icon: Icons.timer_outlined)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildInputField(label: 'Lunch Max (Min)', controller: _lunchLimitController, icon: Icons.restaurant_rounded)),
+                          ],
                         ),
                         const SizedBox(height: 20),
-                        _buildInputField(
-                          label: 'Penalty Rate (per min)',
-                          controller: _deductionController,
-                          icon: Icons.money_off_csred_rounded,
-                        ),
+                        _buildInputField(label: 'Penalty Rate (per min/hourly)', controller: _deductionController, icon: Icons.money_off_csred_rounded),
                       ],
                     ),
                   ),
@@ -228,6 +263,74 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  AppRules _copyRulesWith({
+    TimeOfDay? officeStartTime,
+    TimeOfDay? officeEndTime,
+    TimeOfDay? lunchStartTime,
+    TimeOfDay? lunchEndTime,
+    bool? isWifiRestrictionEnabled,
+    bool? isOvertimeEnabled,
+    bool? isDeductionEnabled,
+    bool? isLunchDeductionEnabled,
+  }) {
+    return AppRules(
+      allowedSsids: _rules!.allowedSsids,
+      allowedBssids: _rules!.allowedBssids,
+      gracePeriodMinutes: _rules!.gracePeriodMinutes,
+      deductionPerMinute: _rules!.deductionPerMinute,
+      officeStartTime: officeStartTime ?? _rules!.officeStartTime,
+      officeEndTime: officeEndTime ?? _rules!.officeEndTime,
+      lunchStartTime: lunchStartTime ?? _rules!.lunchStartTime,
+      lunchEndTime: lunchEndTime ?? _rules!.lunchEndTime,
+      isWifiRestrictionEnabled: isWifiRestrictionEnabled ?? _rules!.isWifiRestrictionEnabled,
+      isOvertimeEnabled: isOvertimeEnabled ?? _rules!.isOvertimeEnabled,
+      isDeductionEnabled: isDeductionEnabled ?? _rules!.isDeductionEnabled,
+      isLunchDeductionEnabled: isLunchDeductionEnabled ?? _rules!.isLunchDeductionEnabled,
+      lunchLimitMinutes: _rules!.lunchLimitMinutes,
+      weeklySchedule: _rules!.weeklySchedule,
+    );
+  }
+
+  Widget _buildTimeRow(String label, TimeOfDay start, TimeOfDay end, Function(TimeOfDay, TimeOfDay) onUpdate) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _timeChip(context, start, (t) => onUpdate(t, end)),
+                  const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('to')),
+                  _timeChip(context, end, (t) => onUpdate(start, t)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _timeChip(BuildContext context, TimeOfDay time, Function(TimeOfDay) onSelected) {
+    return InkWell(
+      onTap: () async {
+        final picked = await showTimePicker(context: context, initialTime: time);
+        if (picked != null) onSelected(picked);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.blueGrey[50],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(time.format(context), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
       ),
     );
   }
@@ -259,15 +362,16 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        const SizedBox(height: 8),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        const SizedBox(height: 6),
         TextField(
           controller: controller,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 20),
+            prefixIcon: Icon(icon, size: 18),
             filled: true,
             fillColor: Colors.blueGrey[50],
+            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
@@ -275,6 +379,5 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
           ),
         ),
       ],
-    );
   }
 }

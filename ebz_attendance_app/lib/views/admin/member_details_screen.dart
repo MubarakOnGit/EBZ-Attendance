@@ -126,40 +126,88 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
                                );
                              }
 
-                             return ListView.separated(
-                               itemCount: userRecords.length,
-                               separatorBuilder: (_, __) => const SizedBox(height: 12),
-                               itemBuilder: (context, index) {
-                                 final record = userRecords[index];
-                                 return Card(
-                                   child: ListTile(
-                                     leading: Container(
-                                       padding: const EdgeInsets.all(8),
-                                       decoration: BoxDecoration(
-                                         color: record.status == AttendanceStatus.present 
-                                            ? Colors.green.withOpacity(0.1) 
-                                            : Colors.orange.withOpacity(0.1),
-                                         borderRadius: BorderRadius.circular(8),
-                                       ),
-                                       child: Icon(
-                                         record.status == AttendanceStatus.present ? Icons.check : Icons.timer,
-                                         color: record.status == AttendanceStatus.present ? Colors.green : Colors.orange,
-                                       ),
-                                     ),
-                                     title: Text(DateFormat('EEEE, MMM d').format(record.date)),
-                                     subtitle: Text(
-                                       'In: ${record.checkIn != null ? DateFormat('hh:mm a').format(record.checkIn!) : "--:--"}  '
-                                       '${record.checkOut != null ? "|  Out: ${DateFormat('hh:mm a').format(record.checkOut!)}" : ""}'
-                                     ),
-                                     trailing: IconButton(
-                                       icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                                       tooltip: 'Clear Status',
-                                       onPressed: () => _confirmClearStatus(context, record),
-                                     ),
-                                   ),
-                                 );
-                               },
-                             );
+                              return ListView.separated(
+                                itemCount: userRecords.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                itemBuilder: (context, index) {
+                                  final record = userRecords[index];
+                                  
+                                  // Lunch Duration Calculation
+                                  String lunchInfo = "N/A";
+                                  bool lunchOverLimit = false;
+                                  if (record.lunchOut != null && record.lunchIn != null) {
+                                    final diff = record.lunchIn!.difference(record.lunchOut!);
+                                    lunchInfo = "${diff.inMinutes} min";
+                                    if (diff.inMinutes > 60) lunchOverLimit = true;
+                                  }
+
+                                  return Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: record.status == AttendanceStatus.present ? Colors.teal.withOpacity(0.05) : Colors.orange.withOpacity(0.05),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Icon(
+                                            record.status == AttendanceStatus.present ? Icons.check_circle_rounded : Icons.timer_rounded,
+                                            color: record.status == AttendanceStatus.present ? Colors.teal : Colors.orange,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 20),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(DateFormat('EEEE, MMM d').format(record.date), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  _smallTag('IN: ${record.checkIn != null ? DateFormat('hh:mm a').format(record.checkIn!) : "--"}', Colors.blueGrey),
+                                                  const SizedBox(width: 8),
+                                                  _smallTag('OUT: ${record.checkOut != null ? DateFormat('hh:mm a').format(record.checkOut!) : "--"}', Colors.blueGrey),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(height: 30, width: 1, color: Colors.grey[200]),
+                                        const SizedBox(width: 20),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text('LUNCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                Text(lunchInfo, style: TextStyle(fontWeight: FontWeight.w900, color: lunchOverLimit ? Colors.redAccent : Colors.teal)),
+                                                if (lunchOverLimit) const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.redAccent),
+                                              ],
+                                            ),
+                                            if (record.lunchOut != null)
+                                              Text(
+                                                '${DateFormat('hh:mm').format(record.lunchOut!)} → ${record.lunchIn != null ? DateFormat('hh:mm').format(record.lunchIn!) : "..."}',
+                                                style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(width: 20),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                                          onPressed: () => _confirmClearStatus(context, record),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
                            },
                          );
                       },
@@ -190,6 +238,18 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _smallTag(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
     );
   }
 

@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/attendance_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../models/user_account.dart';
+import '../../models/attendance_record.dart';
 import 'member_list_screen.dart';
 import 'rules_config_screen.dart';
 import 'reports_screen.dart';
@@ -459,6 +462,7 @@ class AdminOverview extends StatelessWidget {
       ),
     );
   }
+}
 
 class StatCard extends StatelessWidget {
   final String title;
