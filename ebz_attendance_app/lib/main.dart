@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'providers/auth_provider.dart';
@@ -12,10 +13,22 @@ import 'views/member/member_dashboard.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await Firebase.initializeApp();
+    if (kIsWeb) {
+      await Firebase.initializeApp(
+        options: const FirebaseOptions(
+          apiKey: "AIzaSyCoks37eTygyAdNPcUwqCOoPKOQxFNG_ZA",
+          authDomain: "ebz-attendance.firebaseapp.com",
+          projectId: "ebz-attendance",
+          storageBucket: "ebz-attendance.firebasestorage.app",
+          messagingSenderId: "803173085858",
+          appId: "1:803173085858:web:2031f11a69cd9994bdddfb",
+        ),
+      );
+    } else {
+      await Firebase.initializeApp();
+    }
   } catch (e) {
     debugPrint('Firebase initialization failed: $e');
-    debugPrint('Ensure google-services.json (Android) or GoogleService-Info.plist (iOS) is present.');
   }
   runApp(const MyApp());
 }
@@ -49,7 +62,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
