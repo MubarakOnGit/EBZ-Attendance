@@ -48,4 +48,16 @@ class AuthProvider with ChangeNotifier {
     _currentUser = null;
     notifyListeners();
   }
+
+  Future<bool> updatePassword(String newPassword) async {
+    _isLoading = true;
+    notifyListeners();
+    bool success = await _authService.updatePassword(newPassword);
+    if (success && _currentUser != null) {
+      _currentUser = await _authService.getCurrentUser();
+    }
+    _isLoading = false;
+    notifyListeners();
+    return success;
+  }
 }

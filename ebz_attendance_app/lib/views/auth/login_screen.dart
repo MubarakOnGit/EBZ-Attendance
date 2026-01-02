@@ -14,6 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -24,20 +25,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      bool success = await authProvider.login(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+      setState(() => _isLoading = true);
+      
+      String email = _emailController.text.trim();
+      String password = _passwordController.text.trim();
 
-      if (!success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login failed. Please check credentials.')),
-        );
+      // Map "admin" to default email
+      if (email.toLowerCase() == 'admin') {
+        email = 'admin@ebz.com';
+      }
+
+      await Provider.of<AuthProvider>(context, listen: false)
+          .login(email, password);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        if (authProvider.currentUser == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Login failed. Please check your credentials.')),
+          );
+        }
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);

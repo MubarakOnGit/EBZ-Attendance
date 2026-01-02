@@ -13,6 +13,7 @@ class UserAccount {
   final double baseSalary;
   final List<int> workingDays; // 1 = Monday, 7 = Sunday
   final bool isActive;
+  final bool isFirstLogin;
 
   UserAccount({
     required this.uid,
@@ -25,6 +26,7 @@ class UserAccount {
     required this.baseSalary,
     required this.workingDays,
     this.isActive = true,
+    this.isFirstLogin = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -39,6 +41,7 @@ class UserAccount {
       'baseSalary': baseSalary,
       'workingDays': workingDays,
       'isActive': isActive,
+      'isFirstLogin': isFirstLogin,
     };
   }
 
@@ -54,6 +57,7 @@ class UserAccount {
       baseSalary: (map['baseSalary'] ?? 0).toDouble(),
       workingDays: List<int>.from(map['workingDays'] ?? []),
       isActive: map['isActive'] ?? true,
+      isFirstLogin: map['isFirstLogin'] ?? false,
     );
   }
 }

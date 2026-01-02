@@ -81,4 +81,21 @@ class AuthService {
   Future<void> sendPasswordResetEmail(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
   }
+
+  // Update password and clear first login flag
+  Future<bool> updatePassword(String newPassword) async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        await user.updatePassword(newPassword);
+        // Clear first login flag in Firestore
+        await _firestoreService.updateFirstLoginFlag(user.uid, false);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error updating password: $e');
+      return false;
+    }
+  }
 }

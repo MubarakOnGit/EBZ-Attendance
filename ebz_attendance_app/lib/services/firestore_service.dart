@@ -20,6 +20,10 @@ class FirestoreService {
     return null;
   }
 
+  Future<void> updateFirstLoginFlag(String uid, bool isFirstLogin) async {
+    await _db.collection('users').doc(uid).update({'isFirstLogin': isFirstLogin});
+  }
+
   Stream<List<UserAccount>> getMembers() {
     return _db
         .collection('users')

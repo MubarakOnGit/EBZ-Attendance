@@ -9,6 +9,7 @@ import 'views/auth/login_screen.dart';
 import 'models/user_account.dart';
 import 'views/admin/admin_dashboard.dart';
 import 'views/member/member_dashboard.dart';
+import 'views/auth/change_password_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,6 +80,10 @@ class AuthWrapper extends StatelessWidget {
     }
 
     final user = authProvider.currentUser!;
+
+    if (user.isFirstLogin) {
+      return const ChangePasswordScreen();
+    }
 
     if (kIsWeb) {
       if (user.role == UserRole.admin) {
