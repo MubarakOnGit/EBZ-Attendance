@@ -37,10 +37,16 @@ class AuthProvider with ChangeNotifier {
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
-    _currentUser = await _authService.signIn(email, password);
-    _isLoading = false;
-    notifyListeners();
-    return _currentUser != null;
+    try {
+      _currentUser = await _authService.signIn(email, password);
+      _isLoading = false;
+      notifyListeners();
+      return _currentUser != null;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> logout() async {

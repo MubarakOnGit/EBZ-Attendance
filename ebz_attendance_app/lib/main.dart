@@ -28,10 +28,11 @@ void main() async {
     } else {
       await Firebase.initializeApp();
     }
-  } catch (e) {
+    runApp(const MyApp());
+  } catch (e, stackTrace) {
     debugPrint('Firebase initialization failed: $e');
+    runApp(ErrorApp(error: e.toString(), stackTrace: stackTrace));
   }
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -141,6 +142,52 @@ class UnsupportedPlatformScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ErrorApp extends StatelessWidget {
+  final String error;
+  final StackTrace? stackTrace;
+
+  const ErrorApp({super.key, required this.error, this.stackTrace});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Application Initialization Failed',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    error,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (stackTrace != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      stackTrace.toString(),
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 10),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),

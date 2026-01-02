@@ -38,7 +38,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
       
       final authService = AuthService();
       final member = UserAccount(
-        uid: '', // Will be set by Firebase Auth
+        uid: '', 
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         role: UserRole.member,
@@ -46,7 +46,8 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
         phoneNumber: _phoneController.text.trim(),
         salaryType: _salaryType,
         baseSalary: double.parse(_salaryController.text.trim()),
-        workingDays: [1, 2, 3, 4, 5, 6], // Default Mon-Sat
+        workingDays: [1, 2, 3, 4, 5, 6], 
+        isFirstLogin: true, // New members must change password too
       );
 
       final result = await authService.registerMember(member, _passwordController.text.trim());
@@ -56,11 +57,19 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
       if (result != null && mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Member added successfully!')),
+          const SnackBar(
+            content: Text('New member registered successfully!'),
+            backgroundColor: Colors.teal,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to add member.')),
+          const SnackBar(
+            content: Text('Failed to register member. Email might be in use.'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }
@@ -69,71 +78,114 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add New Member')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
-                validator: (value) => (value == null || value.isEmpty) ? 'Enter name' : null,
+      backgroundColor: Colors.blueGrey[50],
+      appBar: AppBar(
+        title: const Text('Add New Member', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 600),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('Employee Information', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('Fill in the details to create a new member account', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                  const SizedBox(height: 32),
+                  
+                  Row(
+                    children: [
+                      Expanded(child: _buildField('Full Name', _nameController, Icons.person_outline)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildField('Employee ID', _employeeIdController, Icons.badge_outlined)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  _buildField('Email Address', _emailController, Icons.email_outlined, keyboard: TextInputType.emailAddress),
+                  const SizedBox(height: 20),
+                  
+                  _buildField('Initial Password', _passwordController, Icons.lock_outline, obscure: true),
+                  const SizedBox(height: 20),
+                  
+                  _buildField('Phone Number', _phoneController, Icons.phone_outlined, keyboard: TextInputType.phone),
+                  const SizedBox(height: 20),
+                  
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<SalaryType>(
+                          value: _salaryType,
+                          decoration: _inputDecoration('Salary Type', Icons.payments_outlined),
+                          items: SalaryType.values.map((type) {
+                            return DropdownMenuItem(value: type, child: Text(type.name.toUpperCase()));
+                          }).toList(),
+                          onChanged: (value) => setState(() => _salaryType = value!),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildField('Base Salary', _salaryController, Icons.account_balance_wallet_outlined, keyboard: TextInputType.number)),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _saveMember,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: _isLoading 
+                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text('Register Member', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _employeeIdController,
-                decoration: const InputDecoration(labelText: 'Employee ID', border: OutlineInputBorder()),
-                validator: (value) => (value == null || value.isEmpty) ? 'Enter ID' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) => (value == null || !value.contains('@')) ? 'Enter valid email' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Initial Password', border: OutlineInputBorder()),
-                obscureText: true,
-                validator: (value) => (value == null || value.length < 6) ? 'Password min 6 chars' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number', border: OutlineInputBorder()),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<SalaryType>(
-                value: _salaryType,
-                decoration: const InputDecoration(labelText: 'Salary Type', border: OutlineInputBorder()),
-                items: SalaryType.values.map((type) {
-                  return DropdownMenuItem(value: type, child: Text(type.name.toUpperCase()));
-                }).toList(),
-                onChanged: (value) => setState(() => _salaryType = value!),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _salaryController,
-                decoration: const InputDecoration(labelText: 'Base Salary', border: OutlineInputBorder()),
-                keyboardType: TextInputType.number,
-                validator: (value) => (value == null || double.tryParse(value) == null) ? 'Enter valid salary' : null,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveMember,
-                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-                child: _isLoading ? const CircularProgressIndicator() : const Text('Save Member'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildField(String label, TextEditingController controller, IconData icon, {TextInputType? keyboard, bool obscure = false}) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboard,
+      decoration: _inputDecoration(label, icon),
+      validator: (value) => (value == null || value.isEmpty) ? 'Required' : null,
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, size: 20, color: Colors.blueGrey),
+      filled: true,
+      fillColor: Colors.blueGrey[50],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      floatingLabelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
     );
   }
 }

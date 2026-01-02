@@ -46,18 +46,31 @@ class UserAccount {
   }
 
   factory UserAccount.fromMap(Map<String, dynamic> map) {
+    int getInt(dynamic value, int defaultValue) {
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? defaultValue;
+      if (value is bool) return value ? 0 : 1; // Map true to 0 (Admin), false to 1 (Member) as a guess, but safer to stick to default
+      return defaultValue;
+    }
+
+    int roleIndex = getInt(map['role'], 1);
+    if (roleIndex < 0 || roleIndex >= UserRole.values.length) roleIndex = 1;
+
+    int salaryIndex = getInt(map['salaryType'], 0);
+    if (salaryIndex < 0 || salaryIndex >= SalaryType.values.length) salaryIndex = 0;
+
     return UserAccount(
       uid: map['uid'] ?? '',
       name: map['name'] ?? '',
       email: map['email'] ?? '',
-      role: UserRole.values[map['role'] ?? 1],
+      role: UserRole.values[roleIndex],
       employeeId: map['employeeId'] ?? '',
       phoneNumber: map['phoneNumber'] ?? '',
-      salaryType: SalaryType.values[map['salaryType'] ?? 0],
+      salaryType: SalaryType.values[salaryIndex],
       baseSalary: (map['baseSalary'] ?? 0).toDouble(),
       workingDays: List<int>.from(map['workingDays'] ?? []),
-      isActive: map['isActive'] ?? true,
-      isFirstLogin: map['isFirstLogin'] ?? false,
+      isActive: map['isActive'] == true,
+      isFirstLogin: map['isFirstLogin'] == true,
     );
   }
 }

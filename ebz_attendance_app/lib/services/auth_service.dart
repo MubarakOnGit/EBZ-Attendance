@@ -27,12 +27,17 @@ class AuthService {
       );
       User? user = result.user;
       if (user != null) {
-        return await _firestoreService.getUser(user.uid);
+        UserAccount? account = await _firestoreService.getUser(user.uid);
+        if (account == null) {
+          throw Exception('User data not found in Firestore. Please ensure the document exists in the "users" collection with the correct UID: ${user.uid}');
+        }
+        return account;
       }
       return null;
+    } on FirebaseAuthException catch (e) {
+      throw Exception(e.message ?? 'Authentication failed');
     } catch (e) {
-      print('Error in signIn: $e');
-      return null;
+      throw e;
     }
   }
 
