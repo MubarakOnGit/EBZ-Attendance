@@ -1,9 +1,15 @@
+import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/attendance_provider.dart';
 import '../../models/attendance_record.dart';
+import '../../models/app_rules.dart';
+import '../../utils/salary_calculator.dart';
+import '../../widgets/animated_entrance.dart';
+import '../../widgets/animated_count.dart';
 
 class MemberDashboard extends StatefulWidget {
   const MemberDashboard({super.key});
@@ -20,8 +26,10 @@ class _MemberDashboardState extends State<MemberDashboard> {
       if (!mounted) return;
       final userId = Provider.of<AuthProvider>(context, listen: false).currentUser?.uid;
       if (userId != null) {
-        Provider.of<AttendanceProvider>(context, listen: false).loadTodayRecord(userId);
-        Provider.of<AttendanceProvider>(context, listen: false).loadMonthRecords(userId);
+        final prov = Provider.of<AttendanceProvider>(context, listen: false);
+        prov.loadTodayRecord(userId);
+        prov.loadMonthRecords(userId);
+        prov.loadRules();
       }
     });
   }
@@ -71,6 +79,10 @@ class _MemberDashboardState extends State<MemberDashboard> {
             _buildUserHeader(user?.name ?? 'Member'),
             const SizedBox(height: 32),
             _buildStatusCard(todayRecord),
+            if (todayRecord != null && todayRecord.lunchOut != null && todayRecord.lunchIn == null) ...[
+              const SizedBox(height: 24),
+              _LunchTimer(record: todayRecord, rules: attendanceProvider.rules),
+            ],
             const SizedBox(height: 32),
             _buildActionButtons(attendanceProvider, todayRecord, user),
             const SizedBox(height: 48),
@@ -83,6 +95,8 @@ class _MemberDashboardState extends State<MemberDashboard> {
             ),
             const SizedBox(height: 20),
             _buildSummaryGrid(present, lateCount, absentCount),
+            const SizedBox(height: 32),
+            _buildMonthlyPayrollCard(attendanceProvider, user),
             const SizedBox(height: 48),
             Text('Recent Activity', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 20),
@@ -402,5 +416,319 @@ class _MemberDashboardState extends State<MemberDashboard> {
         ],
       ),
     );
+  }
+
+  Widget _buildMonthlyPayrollCard(AttendanceProvider provider, dynamic user) {
+    if (user == null) return const SizedBox.shrink();
+    
+    return FutureBuilder<SalarySummary?>(
+      future: provider.getSalarySummary(user, DateTime.now()),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final summary = snapshot.data!;
+        
+        return AnimatedEntrance(
+          delay: const Duration(milliseconds: 300),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: Colors.black.withOpacity(0.04)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                )
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.account_balance_wallet_rounded, size: 20),
+                    const SizedBox(width: 12),
+                    Text(
+                      'PAYROLL INSIGHTS',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                        color: Colors.black.withOpacity(0.4),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'ESTIMATED',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.green.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Net Salary',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.black.withOpacity(0.4),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            const Text(
+                              'AED ',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black26,
+                              ),
+                            ),
+                            AnimatedCount(
+                              count: summary.netSalary.toInt(),
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    _buildDeductionBadge(summary.totalDeductions),
+                  ],
+                ),
+                if (summary.totalDeductions > 0) ...[
+                  const SizedBox(height: 24),
+                  const Divider(height: 1, thickness: 0.5),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      _inlineDeduction('Late:', summary.lateDeductions),
+                      const SizedBox(width: 24),
+                      _inlineDeduction('Break:', summary.lunchDeductions),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDeductionBadge(double total) {
+    bool hasDeductions = total > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: hasDeductions ? Colors.red.withOpacity(0.05) : Colors.green.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            hasDeductions ? Icons.trending_down_rounded : Icons.verified_rounded,
+            size: 14,
+            color: hasDeductions ? Colors.redAccent : Colors.green,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            hasDeductions ? '-AED ${total.toInt()}' : 'PERFECT MONTH',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: hasDeductions ? Colors.redAccent : Colors.green,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _inlineDeduction(String label, double amount) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.black.withOpacity(0.3), fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          'AED ${amount.toInt()}',
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.black45),
+        ),
+      ],
+    );
+  }
+}
+
+class _LunchTimer extends StatefulWidget {
+  final AttendanceRecord record;
+  final AppRules? rules;
+
+  const _LunchTimer({required this.record, required this.rules});
+
+  @override
+  State<_LunchTimer> createState() => _LunchTimerState();
+}
+
+class _LunchTimerState extends State<_LunchTimer> with SingleTickerProviderStateMixin {
+  late Timer _timer;
+  Duration _elapsed = Duration.zero;
+  bool _warned5m = false;
+  bool _warned1m = false;
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
+
+    _updateTime();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateTime());
+  }
+
+  void _updateTime() {
+    if (!mounted || widget.record.lunchOut == null) return;
+    
+    setState(() {
+      _elapsed = DateTime.now().difference(widget.record.lunchOut!);
+    });
+
+    if (widget.rules != null) {
+      final limit = widget.rules!.lunchLimitMinutes;
+      final remainingSeconds = (limit * 60) - _elapsed.inSeconds;
+
+      if (remainingSeconds <= 300 && remainingSeconds > 298 && !_warned5m) {
+        _warned5m = true;
+        _showWarning("5 minutes remaining for lunch!");
+      }
+
+      if (remainingSeconds <= 60 && remainingSeconds > 58 && !_warned1m) {
+        _warned1m = true;
+        _showWarning("1 minute remaining! Please return to work.");
+      }
+    }
+  }
+
+  void _showWarning(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.black,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final limit = widget.rules?.lunchLimitMinutes ?? 60;
+    final remainingSeconds = (limit * 60) - _elapsed.inSeconds;
+    final isOverLimit = remainingSeconds < 0;
+    
+    String timerText = _formatDuration(remainingSeconds.abs());
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        color: isOverLimit ? Colors.red.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isOverLimit ? Colors.redAccent.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+        ),
+      ),
+      child: Row(
+        children: [
+          ScaleTransition(
+            scale: Tween(begin: 1.0, end: 1.1).animate(_pulseController),
+            child: Icon(
+              Icons.timer_outlined,
+              color: isOverLimit ? Colors.redAccent : Colors.black45,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                isOverLimit ? 'LUNCH EXCEEDED' : 'LUNCH BREAK ENDS IN',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                  color: isOverLimit ? Colors.redAccent : Colors.black38,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                isOverLimit ? "+$timerText" : timerText,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: isOverLimit ? Colors.redAccent : Colors.black,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+          const Spacer(),
+          _progressBar(remainingSeconds, limit * 60),
+        ],
+      ),
+    );
+  }
+
+  Widget _progressBar(num remaining, num total) {
+    double progress = (remaining / total).clamp(0.0, 1.0);
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: CircularProgressIndicator(
+        value: progress,
+        strokeWidth: 4,
+        backgroundColor: Colors.black.withOpacity(0.05),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          remaining < 300 ? Colors.redAccent : Colors.black,
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(num seconds) {
+    final m = (seconds / 60).floor();
+    final s = (seconds % 60).floor();
+    return "${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}";
   }
 }

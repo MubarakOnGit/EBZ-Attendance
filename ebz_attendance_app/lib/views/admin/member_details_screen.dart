@@ -5,6 +5,9 @@ import '../../models/user_account.dart';
 import '../../models/attendance_record.dart';
 import '../../providers/attendance_provider.dart';
 import '../../services/firestore_service.dart';
+import '../../utils/salary_calculator.dart';
+import '../../widgets/animated_count.dart';
+import '../../widgets/animated_entrance.dart';
 
 class MemberDetailsScreen extends StatefulWidget {
   final UserAccount user;
@@ -116,6 +119,8 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
                       const Text('OPERATIONAL LOGS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
                     ],
                   ),
+                  const SizedBox(height: 48),
+                  _buildMonthlySummaryCard(context),
                   const SizedBox(height: 60),
                   StreamBuilder<List<AttendanceRecord>>(
                     stream: _firestoreService.getAllAttendance(_selectedDate), 
@@ -295,6 +300,109 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMonthlySummaryCard(BuildContext context) {
+    final provider = Provider.of<AttendanceProvider>(context, listen: false);
+    
+    return FutureBuilder<SalarySummary?>(
+      future: provider.getSalarySummary(widget.user, _selectedDate),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final summary = snapshot.data!;
+        
+        return AnimatedEntrance(
+          delay: const Duration(milliseconds: 200),
+          child: Container(
+            padding: const EdgeInsets.all(48),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: Colors.black.withOpacity(0.04)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 40,
+                  offset: const Offset(0, 20),
+                )
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'NET SALARY PROJECTION',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.black26, letterSpacing: 2),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          const Text('AED ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.black45)),
+                          AnimatedCount(
+                            count: summary.netSalary.toInt(),
+                            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Colors.black),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Based on ${summary.presentDays} active sessions this month',
+                        style: TextStyle(fontSize: 12, color: Colors.black.withOpacity(0.4), fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(width: 1, height: 100, color: Colors.black.withOpacity(0.05)),
+                const SizedBox(width: 48),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'DEDUCTION BREAKDOWN',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.black26, letterSpacing: 2),
+                      ),
+                      const SizedBox(height: 24),
+                      _deductionRow('Late Arrivals', summary.lateDeductions),
+                      const SizedBox(height: 12),
+                      _deductionRow('Break Intervals', summary.lunchDeductions),
+                      const SizedBox(height: 12),
+                      const Divider(height: 12),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('TOTAL LOSS', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11)),
+                          Text(
+                            'AED ${summary.totalDeductions.toInt()}',
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Colors.redAccent),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _deductionRow(String label, double amount) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 13, color: Colors.black.withOpacity(0.4), fontWeight: FontWeight.w500)),
+        Text('AED ${amount.toInt()}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Colors.black)),
+      ],
     );
   }
 }

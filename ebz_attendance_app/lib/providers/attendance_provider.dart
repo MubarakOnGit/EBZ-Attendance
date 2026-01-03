@@ -6,6 +6,7 @@ import '../models/user_account.dart';
 import '../models/app_rules.dart';
 import '../services/firestore_service.dart';
 import '../services/wifi_service.dart';
+import '../utils/salary_calculator.dart';
 
 class AttendanceProvider with ChangeNotifier {
   final FirestoreService _firestoreService = FirestoreService();
@@ -13,12 +14,14 @@ class AttendanceProvider with ChangeNotifier {
   
   AttendanceRecord? _todayRecord;
   List<AttendanceRecord> _monthRecords = [];
+  AppRules? _rules;
   bool _isLoading = false;
   StreamSubscription? _attendanceSub;
   StreamSubscription? _monthSub;
 
   AttendanceRecord? get todayRecord => _todayRecord;
   List<AttendanceRecord> get monthRecords => _monthRecords;
+  AppRules? get rules => _rules;
   bool get isLoading => _isLoading;
 
   @override
@@ -26,6 +29,11 @@ class AttendanceProvider with ChangeNotifier {
     _attendanceSub?.cancel();
     _monthSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> loadRules() async {
+    _rules = await _firestoreService.getRules();
+    notifyListeners();
   }
 
   Future<void> loadTodayRecord(String userId) async {
@@ -61,6 +69,25 @@ class AttendanceProvider with ChangeNotifier {
     });
   }
 
+  Future<SalarySummary?> getSalarySummary(UserAccount user, DateTime month) async {
+    final rules = await _firestoreService.getRules();
+    if (rules == null) return null;
+
+    final startOfMonth = DateTime(month.year, month.month, 1);
+    final endOfMonth = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+
+    // Fetch records for the user for that month
+    // Using simple fetch to avoid mixing with the live stream of 'this month'
+    final records = await _firestoreService.getUserAttendance(user.uid, startOfMonth, endOfMonth).first;
+
+    return SalaryCalculator.calculateMonthlySummary(
+      user: user,
+      rules: rules,
+      records: records,
+      month: month,
+    );
+  }
+
   Future<String?> checkIn(UserAccount user) async {
     _isLoading = true;
     notifyListeners();
@@ -82,7 +109,8 @@ class AttendanceProvider with ChangeNotifier {
       AttendanceStatus status = AttendanceStatus.present;
       // Basic late calculation (actual logic would be more complex)
       if (rules != null) {
-        final startTime = DateTime(now.year, now.month, now.day, rules.officeStartTime.hour, rules.officeStartTime.minute);
+        final targetStartTime = rules.getStartTimeForDay(now.weekday);
+        final startTime = DateTime(now.year, now.month, now.day, targetStartTime.hour, targetStartTime.minute);
         if (now.isAfter(startTime.add(Duration(minutes: rules.gracePeriodMinutes)))) {
           status = AttendanceStatus.late;
         }

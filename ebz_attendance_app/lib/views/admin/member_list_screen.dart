@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/user_account.dart';
 import '../../services/firestore_service.dart';
+import '../../providers/attendance_provider.dart';
+import '../../utils/salary_calculator.dart';
+import '../../widgets/animated_count.dart';
 import 'add_member_screen.dart';
 import 'member_details_screen.dart';
 
@@ -66,7 +70,7 @@ class MemberListScreen extends StatelessWidget {
                         crossAxisCount: crossAxisCount,
                         crossAxisSpacing: 32,
                         mainAxisSpacing: 32,
-                        childAspectRatio: 2.8,
+                        childAspectRatio: 2.2,
                       ),
                       itemCount: members.length,
                       itemBuilder: (context, index) {
@@ -136,24 +140,71 @@ class MemberListScreen extends StatelessWidget {
                       'ID: ${member.employeeId.toUpperCase()}',
                       style: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
                     ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: Text(
-                        member.salaryType.name.toUpperCase(),
-                        style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.black45, letterSpacing: 1),
-                      ),
-                    ),
+                     const SizedBox(height: 12),
+                    _buildMonthlyQuickStats(context, member),
                   ],
                 ),
               ),
               Icon(Icons.chevron_right_rounded, size: 20, color: Colors.black.withOpacity(0.1)),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMonthlyQuickStats(BuildContext context, UserAccount member) {
+    final provider = Provider.of<AttendanceProvider>(context, listen: false);
+    
+    return FutureBuilder<SalarySummary?>(
+      future: provider.getSalarySummary(member, DateTime.now()),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final summary = snapshot.data!;
+        final hasDeductions = summary.totalDeductions > 0;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _statBadge(
+                  label: 'NET: AED ${summary.netSalary.toInt()}',
+                  color: Colors.black,
+                ),
+                const SizedBox(width: 8),
+                if (hasDeductions)
+                  _statBadge(
+                    label: '-AED ${summary.totalDeductions.toInt()}',
+                    color: Colors.redAccent,
+                  )
+                else
+                  _statBadge(
+                    label: 'PERFECT',
+                    color: Colors.green,
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _statBadge({required String label, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 8,
+          fontWeight: FontWeight.w900,
+          color: color,
+          letterSpacing: 0.5,
         ),
       ),
     );

@@ -77,6 +77,22 @@ class AppRules {
       ),
     );
   }
+
+  TimeOfDay getStartTimeForDay(int weekday) {
+    if (weeklySchedule.containsKey(weekday)) {
+      final schedule = weeklySchedule[weekday]!;
+      if (schedule.isWorkDay) return schedule.startTime;
+    }
+    return officeStartTime;
+  }
+
+  TimeOfDay getEndTimeForDay(int weekday) {
+    if (weeklySchedule.containsKey(weekday)) {
+      final schedule = weeklySchedule[weekday]!;
+      if (schedule.isWorkDay) return schedule.endTime;
+    }
+    return officeEndTime;
+  }
 }
 
 class DaySchedule {
