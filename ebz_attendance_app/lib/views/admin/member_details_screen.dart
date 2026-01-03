@@ -22,11 +22,16 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(widget.user.name),
+        title: Text(widget.user.name.toUpperCase(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 2)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_today),
+            icon: const Icon(Icons.calendar_month_rounded, size: 20),
             onPressed: () async {
               final picked = await showDatePicker(
                 context: context,
@@ -44,36 +49,49 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
         children: [
           // Sidebar / Profile Info
           Container(
-            width: 300,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(right: BorderSide(color: Colors.grey.withOpacity(0.1))),
+            width: 380,
+            padding: const EdgeInsets.all(60),
+            decoration: const BoxDecoration(
+              color: Colors.black,
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-                  child: Text(
-                    widget.user.name[0].toUpperCase(),
-                    style: TextStyle(fontSize: 40, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold),
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.user.name[0].toUpperCase(),
+                      style: const TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.w900),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text(widget.user.name, style: Theme.of(context).textTheme.headlineSmall),
-                Text(widget.user.email, style: TextStyle(color: Colors.grey[600])),
                 const SizedBox(height: 40),
-                _buildInfoRow(Icons.badge, 'ID', widget.user.employeeId),
-                _buildInfoRow(Icons.phone, 'Phone', widget.user.phoneNumber),
-                _buildInfoRow(Icons.work, 'Role', 'Member'), // Assuming member
+                Text(widget.user.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
+                const SizedBox(height: 8),
+                Text(widget.user.email, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 60),
+                _buildInfoRow(Icons.badge_outlined, 'PERSONNEL ID', widget.user.employeeId),
+                _buildInfoRow(Icons.phone_outlined, 'CONTACT', widget.user.phoneNumber),
+                _buildInfoRow(Icons.corporate_fare_rounded, 'DEPARTMENT', 'CORE OPERATIONS'),
                 const Spacer(),
-                OutlinedButton.icon(
-                  onPressed: () {
-                     // Edit Profile logic could go here
-                  },
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Edit Profile'),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text('MODIFY PROFILE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                  ),
                 ),
               ],
             ),
@@ -81,137 +99,128 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
           
           // Main Content / Attendance Log
           Expanded(
-            child: Container(
-              color: Colors.grey[50],
-              padding: const EdgeInsets.all(40),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(80),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Attendance Log - ${DateFormat('MMMM yyyy').format(_selectedDate)}',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  Row(
+                    children: [
+                      Text(
+                        DateFormat('MMMM yyyy').format(_selectedDate).toUpperCase(),
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 1),
+                      ),
+                      const Spacer(),
+                      const Icon(Icons.circle, color: Colors.black, size: 8),
+                      const SizedBox(width: 8),
+                      const Text('OPERATIONAL LOGS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: StreamBuilder<List<AttendanceRecord>>(
-                      stream: _firestoreService.getAllAttendance(_selectedDate), // This gets SINGLE DAY. Wait, we want range.
-                      // Adjusting logic: Let's show the LIST of days for the selected MONTH.
-                      // But firestoreService.getAllAttendance(date) gets ALL users for ONE day.
-                      // We want ONE user for MANY days.
-                      // We need a new stream in FirestoreService: getUserAttendance(userId, startOfMonth, endOfMonth)
-                      builder: (context, snapshot) {
-                         // Temporary: using FutureBuilder with getAttendanceRange for now as stream logic needs update
-                         DateTime start = DateTime(_selectedDate.year, _selectedDate.month, 1);
-                         DateTime end = DateTime(_selectedDate.year, _selectedDate.month + 1, 0, 23, 59, 59);
-                         return FutureBuilder<List<AttendanceRecord>>(
-                           future: _firestoreService.getAttendanceRange(start, end), // This gets ALL users. 
-                           // We need to filter client side or update service. 
-                           // For now, let's filter client side.
-                           builder: (context, snap) {
-                             if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-                             
-                             final userRecords = snap.data!.where((r) => r.userId == widget.user.uid).toList();
-                             userRecords.sort((a, b) => b.date.compareTo(a.date)); // Newest first
+                  const SizedBox(height: 60),
+                  StreamBuilder<List<AttendanceRecord>>(
+                    stream: _firestoreService.getAllAttendance(_selectedDate), 
+                    builder: (context, snapshot) {
+                       DateTime start = DateTime(_selectedDate.year, _selectedDate.month, 1);
+                       DateTime end = DateTime(_selectedDate.year, _selectedDate.month + 1, 0, 23, 59, 59);
+                       return FutureBuilder<List<AttendanceRecord>>(
+                         future: _firestoreService.getAttendanceRange(start, end), 
+                         builder: (context, snap) {
+                           if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+                           
+                           final userRecords = snap.data!.where((r) => r.userId == widget.user.uid).toList();
+                           userRecords.sort((a, b) => b.date.compareTo(a.date));
 
-                             if (userRecords.isEmpty) {
-                               return Center(
-                                 child: Column(
-                                   mainAxisAlignment: MainAxisAlignment.center,
-                                   children: [
-                                     Icon(Icons.event_busy, size: 60, color: Colors.grey[300]),
-                                     const SizedBox(height: 16),
-                                     Text('No records found for this month', style: TextStyle(color: Colors.grey[500])),
-                                   ],
-                                 ),
-                               );
-                             }
+                           if (userRecords.isEmpty) {
+                             return Center(
+                               child: Column(
+                                 mainAxisAlignment: MainAxisAlignment.center,
+                                 children: [
+                                   Icon(Icons.event_busy_rounded, size: 80, color: Colors.black.withOpacity(0.05)),
+                                   const SizedBox(height: 24),
+                                   Text('NO LOGS FOR THIS CYCLE', style: TextStyle(color: Colors.black.withOpacity(0.2), fontWeight: FontWeight.w900, letterSpacing: 1)),
+                                 ],
+                               ),
+                             );
+                           }
 
-                              return ListView.separated(
-                                itemCount: userRecords.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final record = userRecords[index];
-                                  
-                                  // Lunch Duration Calculation
-                                  String lunchInfo = "N/A";
-                                  bool lunchOverLimit = false;
-                                  if (record.lunchOut != null && record.lunchIn != null) {
-                                    final diff = record.lunchIn!.difference(record.lunchOut!);
-                                    lunchInfo = "${diff.inMinutes} min";
-                                    if (diff.inMinutes > 60) lunchOverLimit = true;
-                                  }
+                            return ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: userRecords.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 16),
+                              itemBuilder: (context, index) {
+                                final record = userRecords[index];
+                                
+                                String lunchInfo = "0M";
+                                bool lunchOverLimit = false;
+                                if (record.lunchOut != null && record.lunchIn != null) {
+                                  final diff = record.lunchIn!.difference(record.lunchOut!);
+                                  lunchInfo = "${diff.inMinutes}M";
+                                  if (diff.inMinutes > 60) lunchOverLimit = true;
+                                }
 
-                                  return Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: record.status == AttendanceStatus.present ? Colors.teal.withOpacity(0.05) : Colors.orange.withOpacity(0.05),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
+                                return Container(
+                                  padding: const EdgeInsets.all(32),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(color: Colors.black.withOpacity(0.04)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 48,
+                                        height: 48,
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.03),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Center(
                                           child: Icon(
-                                            record.status == AttendanceStatus.present ? Icons.check_circle_rounded : Icons.timer_rounded,
-                                            color: record.status == AttendanceStatus.present ? Colors.teal : Colors.orange,
+                                            record.status == AttendanceStatus.present ? Icons.check_circle_outline_rounded : Icons.timer_rounded,
+                                            color: Colors.black,
+                                            size: 20,
                                           ),
                                         ),
-                                        const SizedBox(width: 20),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(DateFormat('EEEE, MMM d').format(record.date), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                              const SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  _smallTag('IN: ${record.checkIn != null ? DateFormat('hh:mm a').format(record.checkIn!) : "--"}', Colors.blueGrey),
-                                                  const SizedBox(width: 8),
-                                                  _smallTag('OUT: ${record.checkOut != null ? DateFormat('hh:mm a').format(record.checkOut!) : "--"}', Colors.blueGrey),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Container(height: 30, width: 1, color: Colors.grey[200]),
-                                        const SizedBox(width: 20),
-                                        Column(
+                                      ),
+                                      const SizedBox(width: 32),
+                                      Expanded(
+                                        child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            const Text('LUNCH', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-                                            const SizedBox(height: 4),
+                                            Text(DateFormat('EEEE, MMM dd').format(record.date).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                            const SizedBox(height: 8),
                                             Row(
                                               children: [
-                                                Text(lunchInfo, style: TextStyle(fontWeight: FontWeight.w900, color: lunchOverLimit ? Colors.redAccent : Colors.teal)),
-                                                if (lunchOverLimit) const Icon(Icons.warning_amber_rounded, size: 14, color: Colors.redAccent),
+                                                _smallTag('IN: ${record.checkIn != null ? DateFormat('HH:mm').format(record.checkIn!) : "--"}'),
+                                                const SizedBox(width: 8),
+                                                _smallTag('OUT: ${record.checkOut != null ? DateFormat('HH:mm').format(record.checkOut!) : "--"}'),
                                               ],
                                             ),
-                                            if (record.lunchOut != null)
-                                              Text(
-                                                '${DateFormat('hh:mm').format(record.lunchOut!)} → ${record.lunchIn != null ? DateFormat('hh:mm').format(record.lunchIn!) : "..."}',
-                                                style: const TextStyle(fontSize: 10, color: Colors.grey),
-                                              ),
                                           ],
                                         ),
-                                        const SizedBox(width: 20),
-                                        IconButton(
-                                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                                          onPressed: () => _confirmClearStatus(context, record),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              );
-                           },
-                         );
-                      },
-                    ),
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          const Text('REST INTERVAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.black26, letterSpacing: 1)),
+                                          const SizedBox(height: 4),
+                                          Text(lunchInfo, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: lunchOverLimit ? Colors.redAccent : Colors.black)),
+                                        ],
+                                      ),
+                                      const SizedBox(width: 40),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_sweep_rounded, color: Colors.black26, size: 22),
+                                        onPressed: () => _confirmClearStatus(context, record),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                         },
+                       );
+                    },
                   ),
                 ],
               ),
@@ -224,16 +233,17 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.grey[400]),
-          const SizedBox(width: 12),
+          Icon(icon, size: 18, color: Colors.white.withOpacity(0.3)),
+          const SizedBox(width: 20),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(label, style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.2), fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+              const SizedBox(height: 4),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white, fontSize: 14)),
             ],
           ),
         ],
@@ -241,15 +251,14 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
     );
   }
 
-  Widget _smallTag(String label, Color color) {
+  Widget _smallTag(String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.1)),
+        color: Colors.black.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(100),
       ),
-      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+      child: Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.black45)),
     );
   }
 
@@ -257,25 +266,23 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Status?'),
-        content: const Text(
-          'This will delete the attendance record for this day. '
-          ' The member will be able to check in again.',
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('PURGE LOG?'),
+        content: const Text('This action will permanently delete this attendance record. Access will be reset for the personnel.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
             onPressed: () async {
               final provider = Provider.of<AttendanceProvider>(context, listen: false);
               final messenger = ScaffoldMessenger.of(context);
               Navigator.pop(context);
               try {
                 await provider.clearMemberStatus(record.userId, record.date);
-                setState(() {}); // Refresh list
+                setState(() {});
                 if (mounted) {
                    messenger.showSnackBar(
-                     const SnackBar(content: Text('Status cleared successfully.')),
+                     const SnackBar(content: Text('RECORD PURGED'), backgroundColor: Colors.black),
                    );
                 }
               } catch (e) {
@@ -284,7 +291,7 @@ class _MemberDetailsScreenState extends State<MemberDetailsScreen> {
                 }
               }
             },
-            child: const Text('Clear'),
+            child: const Text('CONFIRM PURGE'),
           ),
         ],
       ),

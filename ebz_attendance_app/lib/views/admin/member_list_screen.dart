@@ -12,42 +12,34 @@ class MemberListScreen extends StatelessWidget {
     final firestoreService = FirestoreService();
 
     return Padding(
-      padding: const EdgeInsets.all(40.0),
+      padding: const EdgeInsets.all(60.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Team Members',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: Colors.blueGrey[900],
-                    ),
+                    'Team Directory',
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  const SizedBox(height: 4),
-                  const Text('Manage your employees and their credentials', 
-                    style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text('Manage your staff members and their access credentials.', 
+                    style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddMemberScreen())),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Add New Member'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                icon: const Icon(Icons.add_rounded, size: 20),
+                label: const Text('Add Personnel'),
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 60),
           Expanded(
             child: StreamBuilder<List<UserAccount>>(
               stream: firestoreService.getMembers(),
@@ -69,8 +61,8 @@ class MemberListScreen extends StatelessWidget {
                     return GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
-                        crossAxisSpacing: 20,
-                        mainAxisSpacing: 20,
+                        crossAxisSpacing: 32,
+                        mainAxisSpacing: 32,
                         childAspectRatio: 2.8,
                       ),
                       itemCount: members.length,
@@ -91,21 +83,13 @@ class MemberListScreen extends StatelessWidget {
 
   Widget _buildMemberCard(BuildContext context, UserAccount member) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: Colors.blueGrey.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         onTap: () {
           Navigator.push(
             context,
@@ -115,18 +99,24 @@ class MemberListScreen extends StatelessWidget {
           );
         },
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: Colors.blueAccent.withOpacity(0.1),
-                child: Text(
-                  member.name[0].toUpperCase(),
-                  style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold, fontSize: 20),
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Text(
+                    member.name[0].toUpperCase(),
+                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                  ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,34 +131,24 @@ class MemberListScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'ID: ${member.employeeId}',
-                      style: TextStyle(color: Colors.blueGrey[400], fontSize: 13),
+                      style: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.blueGrey[50],
-                        borderRadius: BorderRadius.circular(4),
+                        color: Colors.black.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(100),
                       ),
                       child: Text(
                         member.salaryType.name.toUpperCase(),
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blueGrey[700]),
+                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5),
                       ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.blueGrey),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MemberDetailsScreen(user: member),
-                    ),
-                  );
-                },
-              ),
+              Icon(Icons.chevron_right_rounded, size: 20, color: Colors.black.withOpacity(0.1)),
             ],
           ),
         ),
@@ -181,11 +161,9 @@ class MemberListScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline_rounded, size: 80, color: Colors.blueGrey[100]),
-          const SizedBox(height: 16),
-          const Text('No members found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
-          const SizedBox(height: 8),
-          const Text('Start by adding your first employee.', style: TextStyle(color: Colors.grey)),
+          Icon(Icons.person_search_rounded, size: 80, color: Colors.black.withOpacity(0.05)),
+          const SizedBox(height: 24),
+          Text('No personnel records found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black.withOpacity(0.2))),
         ],
       ),
     );

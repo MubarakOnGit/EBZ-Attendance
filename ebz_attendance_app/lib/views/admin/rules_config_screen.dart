@@ -97,63 +97,55 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40.0),
+      padding: const EdgeInsets.all(60.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Attendance Settings',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: Colors.blueGrey[900],
-                    ),
+                    'Operational Rules',
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  const SizedBox(height: 4),
-                  const Text('Configure office hours, lunch breaks, and penalty rules', 
-                    style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text('Configure office protocols, compliance metrics, and payroll logic.', 
+                    style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: _saveRules,
-                icon: const Icon(Icons.save_rounded),
-                label: const Text('Save Changes'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
+                label: const Text('Update Protocols'),
               ),
             ],
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 60),
           
           LayoutBuilder(
             builder: (context, constraints) {
               bool isWide = constraints.maxWidth > 900;
               return Wrap(
-                spacing: 24,
-                runSpacing: 24,
+                spacing: 32,
+                runSpacing: 32,
                 children: [
                   _buildSection(
-                    title: 'Office Hours',
-                    description: 'Set standard working and lunch times.',
-                    width: isWide ? (constraints.maxWidth - 24) / 2 : constraints.maxWidth,
+                    title: 'Core Schedule',
+                    description: 'Define standard operating hours and mandatory break intervals.',
+                    width: isWide ? (constraints.maxWidth - 32) / 2 : constraints.maxWidth,
                     child: Column(
                       children: [
-                        _buildTimeRow('Work Hours', _rules!.officeStartTime, _rules!.officeEndTime, (start, end) {
+                        _buildTimeRow('Operational Hours', _rules!.officeStartTime, _rules!.officeEndTime, (start, end) {
                           setState(() {
                             _rules = _copyRulesWith(officeStartTime: start, officeEndTime: end);
                           });
                         }),
-                        const Divider(height: 32),
-                        _buildTimeRow('Lunch Break', _rules!.lunchStartTime, _rules!.lunchEndTime, (start, end) {
+                        const SizedBox(height: 40),
+                        _buildTimeRow('Rest Interval', _rules!.lunchStartTime, _rules!.lunchEndTime, (start, end) {
                           setState(() {
                             _rules = _copyRulesWith(lunchStartTime: start, lunchEndTime: end);
                           });
@@ -162,56 +154,60 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
                     ),
                   ),
                   _buildSection(
-                    title: 'WiFi Restrictions',
-                    description: 'Members must be connected to these SSIDs to check-in.',
-                    width: isWide ? (constraints.maxWidth - 24) / 2 : constraints.maxWidth,
+                    title: 'Network Compliance',
+                    description: 'Restrict operational access to authorized corporate networks.',
+                    width: isWide ? (constraints.maxWidth - 32) / 2 : constraints.maxWidth,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Enable WiFi Restriction', style: TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: const Text('Validate connection during check-in'),
+                            activeColor: Colors.black,
+                            title: const Text('Network Validation', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            subtitle: const Text('Verify SSID presence during authentication', style: TextStyle(fontSize: 12)),
                             value: _rules!.isWifiRestrictionEnabled,
                             onChanged: (val) => setState(() => _rules = _copyRulesWith(isWifiRestrictionEnabled: val)),
                           ),
-                          const Divider(),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
                           Row(
                             children: [
                               Expanded(
                               child: TextField(
                                 controller: _ssidController,
                                 decoration: InputDecoration(
-                                  hintText: 'Work_WiFi_Main',
+                                  hintText: 'Authorized SSID',
                                   filled: true,
-                                  fillColor: Colors.blueGrey[50],
+                                  fillColor: Colors.black.withOpacity(0.03),
                                   border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide.none,
                                   ),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 12),
-                            IconButton.filled(
+                            IconButton(
                               onPressed: _addSsid,
-                              icon: const Icon(Icons.add_rounded),
+                              icon: const Icon(Icons.add_rounded, color: Colors.white),
                               style: IconButton.styleFrom(
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                backgroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.all(16),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           children: _rules!.allowedSsids.map((ssid) => Chip(
-                            label: Text(ssid, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            backgroundColor: Colors.blueAccent.withOpacity(0.05),
-                            side: BorderSide(color: Colors.blueAccent.withOpacity(0.1)),
-                            deleteIcon: const Icon(Icons.close_rounded, size: 16),
+                            label: Text(ssid, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                            backgroundColor: Colors.black,
+                            labelStyle: const TextStyle(color: Colors.white),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                            deleteIcon: const Icon(Icons.close_rounded, size: 14, color: Colors.white70),
                             onDeleted: () => setState(() => _rules!.allowedSsids.remove(ssid)),
                           )).toList(),
                         ),
@@ -219,42 +215,24 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
                     ),
                   ),
                   _buildSection(
-                    title: 'Payroll Logic',
-                    description: 'Automate overtime and late-arrival deductions.',
-                    width: isWide ? (constraints.maxWidth - 24) / 2 : constraints.maxWidth,
+                    title: 'Payroll & Adjustments',
+                    description: 'Configure automated overtime tracking and late-arrival penalties.',
+                    width: isWide ? (constraints.maxWidth - 32) / 2 : constraints.maxWidth,
                     child: Column(
                       children: [
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Enable Deductions', style: TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: const Text('Apply penalties for late arrivals'),
-                          value: _rules!.isDeductionEnabled,
-                          onChanged: (val) => setState(() => _rules = _copyRulesWith(isDeductionEnabled: val)),
-                        ),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Enable Overtime', style: TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: const Text('Record hours worked beyond shift end'),
-                          value: _rules!.isOvertimeEnabled,
-                          onChanged: (val) => setState(() => _rules = _copyRulesWith(isOvertimeEnabled: val)),
-                        ),
-                        SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Strict Lunch Hour', style: TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: const Text('Deduct salary if break exceeds limit'),
-                          value: _rules!.isLunchDeductionEnabled,
-                          onChanged: (val) => setState(() => _rules = _copyRulesWith(isLunchDeductionEnabled: val)),
-                        ),
-                        const Divider(height: 32),
+                        _buildSwitch('Deduction Engine', 'Automate penalties for tardiness', _rules!.isDeductionEnabled, (val) => setState(() => _rules = _copyRulesWith(isDeductionEnabled: val))),
+                        _buildSwitch('Overtime Analytics', 'Record operational hours beyond shift end', _rules!.isOvertimeEnabled, (val) => setState(() => _rules = _copyRulesWith(isOvertimeEnabled: val))),
+                        _buildSwitch('Break Compliance', 'Flag intervals exceeding mandatory limits', _rules!.isLunchDeductionEnabled, (val) => setState(() => _rules = _copyRulesWith(isLunchDeductionEnabled: val))),
+                        const SizedBox(height: 40),
                         Row(
                           children: [
-                            Expanded(child: _buildInputField(label: 'Late Grace (Min)', controller: _graceController, icon: Icons.timer_outlined)),
-                            const SizedBox(width: 16),
-                            Expanded(child: _buildInputField(label: 'Lunch Max (Min)', controller: _lunchLimitController, icon: Icons.restaurant_rounded)),
+                            Expanded(child: _buildInputField(label: 'Grace Offset (M)', controller: _graceController, icon: Icons.timer_outlined)),
+                            const SizedBox(width: 20),
+                            Expanded(child: _buildInputField(label: 'Max Break (M)', controller: _lunchLimitController, icon: Icons.restaurant_rounded)),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        _buildInputField(label: 'Penalty Rate (per min/hourly)', controller: _deductionController, icon: Icons.money_off_csred_rounded),
+                        const SizedBox(height: 24),
+                        _buildInputField(label: 'Adjustment Rate (Per Minute)', controller: _deductionController, icon: Icons.money_off_csred_rounded),
                       ],
                     ),
                   ),
@@ -264,6 +242,17 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSwitch(String title, String subtitle, bool value, Function(bool) onChanged) {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      activeColor: Colors.black,
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+      value: value,
+      onChanged: onChanged,
     );
   }
 
@@ -296,23 +285,17 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
   }
 
   Widget _buildTimeRow(String label, TimeOfDay start, TimeOfDay end, Function(TimeOfDay, TimeOfDay) onUpdate) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  _timeChip(context, start, (t) => onUpdate(t, end)),
-                  const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('to')),
-                  _timeChip(context, end, (t) => onUpdate(start, t)),
-                ],
-              ),
-            ],
-          ),
+        Text(label.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 1.5, color: Colors.black26)),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            _timeChip(context, start, (t) => onUpdate(t, end)),
+            const Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('→', style: TextStyle(color: Colors.black26))),
+            _timeChip(context, end, (t) => onUpdate(start, t)),
+          ],
         ),
       ],
     );
@@ -325,12 +308,12 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
         if (picked != null) onSelected(picked);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.blueGrey[50],
-          borderRadius: BorderRadius.circular(8),
+          color: Colors.black.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Text(time.format(context), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo)),
+        child: Text(time.format(context).toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1)),
       ),
     );
   }
@@ -338,20 +321,19 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
   Widget _buildSection({required String title, required String description, required Widget child, required double width}) {
     return Container(
       width: width,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 4))],
-        border: Border.all(color: Colors.blueGrey.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Text(description, style: TextStyle(color: Colors.blueGrey[400], fontSize: 13)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
+          Text(description, style: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 13)),
+          const SizedBox(height: 40),
           child,
         ],
       ),
@@ -362,22 +344,23 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-        const SizedBox(height: 6),
+        Text(label.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1, color: Colors.black26)),
+        const SizedBox(height: 12),
         TextField(
           controller: controller,
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, size: 18),
+            prefixIcon: Icon(icon, size: 18, color: Colors.black),
             filled: true,
-            fillColor: Colors.blueGrey[50],
-            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+            fillColor: Colors.black.withOpacity(0.03),
+            contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
             ),
           ),
         ),
       ],
+    );
   }
 }

@@ -33,16 +33,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
     bool isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       drawer: isMobile ? _buildDrawer() : null,
-      appBar: isMobile ? AppBar(title: const Text('EBZ Admin')) : null,
+      appBar: isMobile ? AppBar(
+        title: const Text('Admin Portal'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+      ) : null,
       body: Row(
         children: [
           if (!isMobile) _buildSidebar(),
           Expanded(
-            child: Container(
-              color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: ClipRRect(
                 child: _pages[_selectedIndex],
               ),
             ),
@@ -55,25 +59,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildSidebar() {
     return Container(
       width: 280,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(right: BorderSide(color: Colors.grey.withOpacity(0.1))),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(4, 0),
-          )
-        ],
+      decoration: const BoxDecoration(
+        color: Colors.black,
       ),
       child: Column(
         children: [
           _buildLogo(),
-          const SizedBox(height: 32),
-          _buildNavItem(0, 'Overview', Icons.dashboard_rounded),
-          _buildNavItem(1, 'Members', Icons.people_rounded),
-          _buildNavItem(2, 'Salary Rules', Icons.settings_suggest_rounded),
-          _buildNavItem(3, 'Reports', Icons.assessment_rounded),
+          const SizedBox(height: 20),
+          _buildNavItem(0, 'Dashboard', Icons.grid_view_rounded),
+          _buildNavItem(1, 'Directory', Icons.person_search_rounded),
+          _buildNavItem(2, 'Compliance', Icons.rule_rounded),
+          _buildNavItem(3, 'Analytics', Icons.bar_chart_rounded),
           const Spacer(),
           _buildLogoutBtn(),
         ],
@@ -83,13 +79,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildDrawer() {
     return Drawer(
+      backgroundColor: Colors.black,
       child: Column(
         children: [
           _buildLogo(),
           const SizedBox(height: 20),
           ...List.generate(4, (index) => _buildNavItem(index, 
-            ['Overview', 'Members', 'Salary Rules', 'Reports'][index],
-            [Icons.dashboard_rounded, Icons.people_rounded, Icons.settings_suggest_rounded, Icons.assessment_rounded][index],
+            ['Dashboard', 'Directory', 'Compliance', 'Analytics'][index],
+            [Icons.grid_view_rounded, Icons.person_search_rounded, Icons.rule_rounded, Icons.bar_chart_rounded][index],
             isDrawer: true,
           )),
           const Spacer(),
@@ -101,22 +98,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildLogo() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      padding: const EdgeInsets.symmetric(vertical: 60),
+      child: const Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Colors.blueAccent, Colors.indigoAccent]),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 28),
-          ),
-          const SizedBox(width: 12),
-          const Text(
-            'EBZ ADMIN',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 1),
+          Icon(Icons.radar_rounded, color: Colors.white, size: 40),
+          SizedBox(height: 16),
+          Text(
+            'EBZ CORE',
+            style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 4),
           ),
         ],
       ),
@@ -126,7 +115,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildNavItem(int index, String label, IconData icon, {bool isDrawer = false}) {
     bool isSelected = _selectedIndex == index;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: InkWell(
         onTap: () {
           setState(() => _selectedIndex = index);
@@ -135,21 +124,21 @@ class _AdminDashboardState extends State<AdminDashboard> {
         borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.blueAccent.withOpacity(0.1) : Colors.transparent,
+            color: isSelected ? Colors.white.withOpacity(0.1) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
-              Icon(icon, color: isSelected ? Colors.blueAccent : Colors.grey[600], size: 24),
+              Icon(icon, color: isSelected ? Colors.white : Colors.white38, size: 22),
               const SizedBox(width: 16),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.blueAccent : Colors.grey[600],
+                  color: isSelected ? Colors.white : Colors.white38,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  fontSize: 15,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -161,25 +150,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildLogoutBtn() {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: InkWell(
-        onTap: () => Provider.of<AuthProvider>(context, listen: false).logout(),
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.redAccent.withOpacity(0.1)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
-              SizedBox(width: 12),
-              Text('Sign Out', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
+      padding: const EdgeInsets.all(32.0),
+      child: TextButton.icon(
+        onPressed: () => Provider.of<AuthProvider>(context, listen: false).logout(),
+        icon: const Icon(Icons.logout_rounded, color: Colors.white54, size: 18),
+        label: const Text('SIGN OUT', style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1)),
       ),
     );
   }
@@ -196,31 +171,32 @@ class AdminOverview extends StatelessWidget {
     final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(40.0),
+      padding: const EdgeInsets.all(60.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Dashboard Overview',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900, color: Colors.blueGrey[900]),
+                    'Operational Overview',
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(
-                    'Real-time analytics for your organization',
-                    style: TextStyle(color: Colors.blueGrey[400], fontSize: 16),
+                    'Systems are active and monitoring real-time activity.',
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
               ),
               const Spacer(),
-              _buildDateChip(),
+              _buildDateBadge(),
             ],
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 60),
           
           LayoutBuilder(
             builder: (context, constraints) {
@@ -230,18 +206,17 @@ class AdminOverview extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 24,
-                  mainAxisSpacing: 24,
-                  childAspectRatio: 1.6,
+                  crossAxisSpacing: 32,
+                  mainAxisSpacing: 32,
+                  childAspectRatio: 1.5,
                 ),
                 children: [
                   StreamBuilder<QuerySnapshot>(
                     stream: db.collection('users').where('role', isEqualTo: 1).snapshots(),
                     builder: (context, snapshot) => StatCard(
-                      title: 'Total Members',
+                      title: 'Personnel',
                       value: snapshot.hasData ? snapshot.data!.docs.length.toString() : '...',
-                      icon: Icons.group_rounded,
-                      color: Colors.indigo,
+                      icon: Icons.people_outline_rounded,
                     ),
                   ),
                   StreamBuilder<QuerySnapshot>(
@@ -252,10 +227,9 @@ class AdminOverview extends StatelessWidget {
                     builder: (context, snapshot) {
                       int clockedIn = snapshot.hasData ? snapshot.data!.docs.length : 0;
                       return StatCard(
-                        title: 'Clocked In',
+                        title: 'Active Today',
                         value: clockedIn.toString(),
-                        icon: Icons.login_rounded,
-                        color: Colors.teal,
+                        icon: Icons.check_circle_outline_rounded,
                       );
                     },
                   ),
@@ -266,10 +240,9 @@ class AdminOverview extends StatelessWidget {
                         .where('status', isEqualTo: 1) // Assuming 1 is Late
                         .snapshots(),
                     builder: (context, snapshot) => StatCard(
-                      title: 'Late Arrivals',
+                      title: 'Exceptions',
                       value: snapshot.hasData ? snapshot.data!.docs.length.toString() : '...',
-                      icon: Icons.timer_rounded,
-                      color: Colors.orange,
+                      icon: Icons.error_outline_rounded,
                     ),
                   ),
                   StreamBuilder<QuerySnapshot>(
@@ -280,8 +253,7 @@ class AdminOverview extends StatelessWidget {
                     builder: (context, snapshot) => StatCard(
                       title: 'On Break',
                       value: snapshot.hasData ? snapshot.data!.docs.length.toString() : '...',
-                      icon: Icons.restaurant_rounded,
-                      color: Colors.purple,
+                      icon: Icons.coffee_rounded,
                     ),
                   ),
                 ],
@@ -289,30 +261,24 @@ class AdminOverview extends StatelessWidget {
             },
           ),
           
-          const SizedBox(height: 40),
+          const SizedBox(height: 60),
           _buildRecentActivitySection(context, db),
         ],
       ),
     );
   }
 
-  Widget _buildDateChip() {
+  Widget _buildDateBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.calendar_today_rounded, size: 16, color: Colors.blueAccent),
-          const SizedBox(width: 10),
-          Text(
-            DateTime.now().toString().split(' ')[0],
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-        ],
+      child: Text(
+        DateFormat('MMMM dd, yyyy').format(DateTime.now()),
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
       ),
     );
   }
@@ -320,36 +286,32 @@ class AdminOverview extends StatelessWidget {
   Widget _buildRecentActivitySection(BuildContext context, FirebaseFirestore db) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(60),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 10))],
-        border: Border.all(color: Colors.blueGrey.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text('Today\'s Presence', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('Live Personnel Monitoring', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
               const Spacer(),
-              TextButton.icon(
-                onPressed: () {}, 
-                icon: const Icon(Icons.refresh_rounded, size: 18), 
-                label: const Text('Refresh'),
-              ),
+              const Icon(Icons.circle, color: Colors.green, size: 8),
+              const SizedBox(width: 8),
+              const Text('OPERATIONAL STATUS: ACTIVE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2, color: Colors.black26)),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 60),
           StreamBuilder<QuerySnapshot>(
-            stream: db.collection('users').where('role', isEqualTo: 1).snapshots(), // Members
+            stream: db.collection('users').where('role', isEqualTo: 1).snapshots(),
             builder: (context, userSnapshot) {
               if (userSnapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-              if (!userSnapshot.hasData || userSnapshot.data!.docs.isEmpty) return const Text('No members found.');
+              if (!userSnapshot.hasData || userSnapshot.data!.docs.isEmpty) return const Text('No records.');
 
               final members = userSnapshot.data!.docs.map((doc) => UserAccount.fromMap(doc.data() as Map<String, dynamic>)).toList();
-
               final today = DateTime.now();
               final startOfDay = DateTime(today.year, today.month, today.day);
               final endOfDay = DateTime(today.year, today.month, today.day, 23, 59, 59);
@@ -368,55 +330,64 @@ class AdminOverview extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: members.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, __) => Divider(height: 1, color: Colors.black.withOpacity(0.03)),
                     itemBuilder: (context, index) {
                       final member = members[index];
                       final record = records.where((r) => r.userId == member.uid).firstOrNull;
                       bool isCheckIn = record != null;
 
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.blueAccent.withOpacity(0.1),
-                          child: Text(member.name[0].toUpperCase(), style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold)),
-                        ),
-                        title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(
-                          isCheckIn 
-                            ? 'Checked In at ${DateFormat('hh:mm a').format(record.checkIn!)}' 
-                            : 'Not Checked In',
-                          style: TextStyle(color: isCheckIn ? Colors.teal : Colors.blueGrey[300], fontSize: 13),
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Row(
                           children: [
+                            Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.03),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(member.name[0], style: const TextStyle(fontWeight: FontWeight.w900)),
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(member.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5)),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    isCheckIn 
+                                      ? 'OPERATIONAL SINCE ${DateFormat('HH:mm').format(record.checkIn!)}' 
+                                      : 'OFFLINE / INACTIVE',
+                                    style: TextStyle(color: isCheckIn ? Colors.black45 : Colors.black26, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+                                  ),
+                                ],
+                              ),
+                            ),
                             if (isCheckIn) ...[
                                Container(
-                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                  decoration: BoxDecoration(
-                                   color: (record.status == AttendanceStatus.present ? Colors.teal : Colors.orange).withOpacity(0.1),
-                                   borderRadius: BorderRadius.circular(6),
+                                   color: Colors.black.withOpacity(0.03),
+                                   borderRadius: BorderRadius.circular(100),
                                  ),
                                  child: Text(
                                    record.status.name.toUpperCase(),
-                                   style: TextStyle(
-                                     fontSize: 10, 
-                                     fontWeight: FontWeight.bold, 
-                                     color: record.status == AttendanceStatus.present ? Colors.teal : Colors.orange[800],
-                                   ),
+                                   style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1),
                                  ),
                                ),
-                               const SizedBox(width: 12),
+                               const SizedBox(width: 40),
                             ],
-                            OutlinedButton(
+                            TextButton(
                               onPressed: isCheckIn ? () => _confirmReset(context, member, record) : null,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.redAccent,
-                                side: isCheckIn ? const BorderSide(color: Colors.redAccent) : null,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              style: TextButton.styleFrom(
+                                foregroundColor: isCheckIn ? Colors.redAccent.withOpacity(0.8) : Colors.black12,
+                                textStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5),
                               ),
-                              child: const Text('Reset', style: TextStyle(fontSize: 12)),
+                              child: const Text('PURGE STATUS'),
                             ),
                           ],
                         ),
@@ -436,19 +407,20 @@ class AdminOverview extends StatelessWidget {
      showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset Status?'),
-        content: Text('Are you sure you want to clear the check-in status for ${member.name}? They will be able to check in again.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('PURGE OPERATIONAL STATUS?'),
+        content: Text('This action will reset the session for ${member.name.toUpperCase()}. Current records for this cycle will be invalidated.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
             onPressed: () async {
               Navigator.pop(context);
               final attendanceProvider = Provider.of<AttendanceProvider>(context, listen: false);
               try {
                 await attendanceProvider.clearMemberStatus(member.uid, record.date);
                 if (context.mounted) {
-                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Status reset successfully.')));
+                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('SESSION PURGED'), backgroundColor: Colors.black));
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -456,7 +428,7 @@ class AdminOverview extends StatelessWidget {
                 }
               }
             },
-            child: const Text('Reset'),
+            child: const Text('CONFIRM PURGE'),
           ),
         ],
       ),
@@ -468,67 +440,41 @@ class StatCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
-  final Color color;
 
   const StatCard({
     super.key,
     required this.title,
     required this.value,
     required this.icon,
-    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.white, color.withOpacity(0.02)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: color, size: 26),
-              ),
-              const Spacer(),
-              Icon(Icons.more_horiz_rounded, color: Colors.grey[300]),
-            ],
-          ),
-          const SizedBox(height: 20),
+          Icon(icon, color: Colors.black, size: 28),
+          const SizedBox(height: 24),
           Text(
             value,
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.blueGrey[900]),
+            style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w900, color: Colors.black),
           ),
           const SizedBox(height: 4),
           Text(
             title.toUpperCase(),
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              letterSpacing: 1.2,
+            style: const TextStyle(
+              color: Colors.black26,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 2,
             ),
           ),
         ],

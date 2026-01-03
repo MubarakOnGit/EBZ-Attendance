@@ -21,25 +21,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final reportProvider = Provider.of<ReportProvider>(context);
 
     return Padding(
-      padding: const EdgeInsets.all(40.0),
+      padding: const EdgeInsets.all(60.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Reports & Analytics',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: Colors.blueGrey[900],
-                    ),
+                    'Operational Analytics',
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  const SizedBox(height: 4),
-                  const Text('Analyze attendance data and export monthly records', 
-                    style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  Text('Comprehensive attendance data and system performance reports.', 
+                    style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
               const Spacer(),
@@ -49,31 +47,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   if (path != null && mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Report saved to: $path'),
+                        content: Text('Report successfully exported: $path'),
                         behavior: SnackBarBehavior.floating,
-                        backgroundColor: Colors.indigo,
+                        backgroundColor: Colors.black,
                       ),
                     );
                   }
                 },
                 icon: reportProvider.isExporting 
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.download_rounded),
-                label: const Text('Export Monthly (.xlsx)'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueGrey[800],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+                  : const Icon(Icons.description_rounded, size: 20),
+                label: const Text('Export Analytics (.xlsx)'),
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 60),
           
           _buildFilterBar(),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           
           Expanded(child: _buildAttendanceList()),
         ],
@@ -83,21 +75,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildFilterBar() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
-        color: Colors.blueGrey[50],
+        color: Colors.black.withOpacity(0.03),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
-          const Icon(Icons.filter_list_rounded, color: Colors.blueGrey),
-          const SizedBox(width: 12),
-          const Text('Viewing records for: ', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(width: 8),
-          ActionChip(
-            avatar: const Icon(Icons.calendar_month_rounded, size: 16),
-            label: Text(DateFormat('EEEE, MMM d, yyyy').format(_selectedDate)),
-            onPressed: () async {
+          const Icon(Icons.filter_list_rounded, color: Colors.black26, size: 20),
+          const SizedBox(width: 16),
+          const Text('TEMPORAL SCOPE:', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5, color: Colors.black26)),
+          const SizedBox(width: 16),
+          InkWell(
+            onTap: () async {
               final picked = await showDatePicker(
                 context: context,
                 initialDate: _selectedDate,
@@ -106,6 +96,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
               );
               if (picked != null) setState(() => _selectedDate = picked);
             },
+            child: Row(
+              children: [
+                Text(
+                  DateFormat('MMMM dd, yyyy').format(_selectedDate).toUpperCase(),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.expand_more_rounded, size: 18),
+              ],
+            ),
           ),
         ],
       ),
@@ -116,12 +116,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20)],
-        border: Border.all(color: Colors.blueGrey.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.black.withOpacity(0.04)),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(32),
         child: StreamBuilder<List<AttendanceRecord>>(
           stream: _firestoreService.getAllAttendance(_selectedDate),
           builder: (context, snapshot) {
@@ -135,47 +134,64 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
             return ListView.separated(
               itemCount: records.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) => Divider(height: 1, color: Colors.black.withOpacity(0.03)),
               itemBuilder: (context, index) {
                 final record = records[index];
                 bool isLate = record.status == AttendanceStatus.late;
                 
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  leading: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: (isLate ? Colors.orange : Colors.teal).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      isLate ? Icons.timer_rounded : Icons.check_circle_rounded,
-                      color: isLate ? Colors.orange : Colors.teal,
-                    ),
-                  ),
-                  title: Text(
-                    'User ID: ${record.userId}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    'In: ${record.checkIn != null ? DateFormat('HH:mm').format(record.checkIn!) : '--'} • '
-                    'Out: ${record.checkOut != null ? DateFormat('HH:mm').format(record.checkOut!) : '--'}',
-                    style: TextStyle(color: Colors.blueGrey[400]),
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: (isLate ? Colors.orange : Colors.teal).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      record.status.name.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: isLate ? Colors.orange[800] : Colors.teal[800],
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.03),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            isLate ? Icons.timer_rounded : Icons.check_circle_outline_rounded,
+                            color: Colors.black,
+                            size: 20,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ID: ${record.userId}',
+                              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'ACTIVE: ${record.checkIn != null ? DateFormat('HH:mm').format(record.checkIn!) : '--'} TO ${record.checkOut != null ? DateFormat('HH:mm').format(record.checkOut!) : '--'}',
+                              style: TextStyle(color: Colors.black.withOpacity(0.3), fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(isLate ? 0.05 : 0.03),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Text(
+                          record.status.name.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
+                            color: isLate ? Colors.redAccent : Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -191,11 +207,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.history_rounded, size: 60, color: Colors.blueGrey[100]),
-          const SizedBox(height: 16),
-          const Text('No records found', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
-          const SizedBox(height: 4),
-          const Text('There are no attendance logs for this day.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+          Icon(Icons.history_rounded, size: 60, color: Colors.black.withOpacity(0.05)),
+          const SizedBox(height: 24),
+          Text('No operational logs found', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1, color: Colors.black.withOpacity(0.2))),
         ],
       ),
     );

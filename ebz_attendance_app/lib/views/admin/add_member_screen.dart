@@ -79,114 +79,133 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blueGrey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Add New Member', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('REGISTRATION HUB', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(40),
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 600),
-            padding: const EdgeInsets.all(32),
+            constraints: const BoxConstraints(maxWidth: 800),
+            padding: const EdgeInsets.all(60),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: Colors.black.withOpacity(0.04)),
             ),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Employee Information', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  Text('Fill in the details to create a new member account', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+                   Row(
+                    children: [
+                      const Icon(Icons.person_add_rounded, color: Colors.black, size: 28),
+                      const SizedBox(width: 20),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Personnel Intake', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                          Text('Onboard new personnel to the operational network.', style: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 13)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 60),
+                  
+                  Row(
+                    children: [
+                      Expanded(child: _buildField('FULL LEGAL NAME', _nameController, Icons.person_outline_rounded)),
+                      const SizedBox(width: 24),
+                      Expanded(child: _buildField('PERSONNEL ID', _employeeIdController, Icons.badge_outlined)),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  _buildField('COMMUNICATION EMAIL', _emailController, Icons.alternate_email_rounded, keyboard: TextInputType.emailAddress),
+                  const SizedBox(height: 32),
+                  
+                  _buildField('SECURE ACCESS TOKEN (PASSPHRASE)', _passwordController, Icons.key_rounded, obscure: true),
+                  const SizedBox(height: 32),
+                  
+                  _buildField('CONTACT DIGITS', _phoneController, Icons.phone_iphone_rounded, keyboard: TextInputType.phone),
                   const SizedBox(height: 32),
                   
                   Row(
                     children: [
-                      Expanded(child: _buildField('Full Name', _nameController, Icons.person_outline)),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildField('Employee ID', _employeeIdController, Icons.badge_outlined)),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  _buildField('Email Address', _emailController, Icons.email_outlined, keyboard: TextInputType.emailAddress),
-                  const SizedBox(height: 20),
-                  
-                  _buildField('Initial Password', _passwordController, Icons.lock_outline, obscure: true),
-                  const SizedBox(height: 20),
-                  
-                  _buildField('Phone Number', _phoneController, Icons.phone_outlined, keyboard: TextInputType.phone),
-                  const SizedBox(height: 20),
-                  
-                  Row(
-                    children: [
                       Expanded(
-                        child: DropdownButtonFormField<SalaryType>(
-                          value: _salaryType,
-                          decoration: _inputDecoration('Salary Type', Icons.payments_outlined),
-                          items: SalaryType.values.map((type) {
-                            return DropdownMenuItem(value: type, child: Text(type.name.toUpperCase()));
-                          }).toList(),
-                          onChanged: (value) => setState(() => _salaryType = value!),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('COMPENSATION MODEL', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5, color: Colors.black26)),
+                            const SizedBox(height: 12),
+                            DropdownButtonFormField<SalaryType>(
+                              value: _salaryType,
+                              decoration: _inputDecoration('', Icons.payments_outlined),
+                              items: SalaryType.values.map((type) {
+                                return DropdownMenuItem(value: type, child: Text(type.name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)));
+                              }).toList(),
+                              onChanged: (value) => setState(() => _salaryType = value!),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildField('Base Salary', _salaryController, Icons.account_balance_wallet_outlined, keyboard: TextInputType.number)),
+                      const SizedBox(width: 24),
+                      Expanded(child: _buildField('BASE COMPENSATION', _salaryController, Icons.account_balance_rounded, keyboard: TextInputType.number)),
                     ],
                   ),
                   
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 60),
                   
                   ElevatedButton(
                     onPressed: _isLoading ? null : _saveMember,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 24),
                     ),
                     child: _isLoading 
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Text('Register Member', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      : const Text('AUTHORIZE REGISTRATION', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                   ),
                 ],
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildField(String label, TextEditingController controller, IconData icon, {TextInputType? keyboard, bool obscure = false}) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscure,
-      keyboardType: keyboard,
-      decoration: _inputDecoration(label, icon),
-      validator: (value) => (value == null || value.isEmpty) ? 'Required' : null,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1.5, color: Colors.black26)),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: controller,
+          obscureText: obscure,
+          keyboardType: keyboard,
+          decoration: _inputDecoration('', icon),
+          validator: (value) => (value == null || value.isEmpty) ? 'REQUIRED' : null,
+        ),
+      ],
     );
   }
 
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, size: 20, color: Colors.blueGrey),
+      prefixIcon: Icon(icon, size: 20, color: Colors.black),
       filled: true,
-      fillColor: Colors.blueGrey[50],
+      fillColor: Colors.black.withOpacity(0.03),
+      contentPadding: const EdgeInsets.all(24),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
-      floatingLabelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
     );
   }
 }
