@@ -22,20 +22,23 @@ class MemberListScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Team Directory',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                  const Text(
+                    'Personnel Directory',
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
                   ),
                   const SizedBox(height: 8),
-                  Text('Manage your staff members and their access credentials.', 
-                    style: Theme.of(context).textTheme.bodyMedium),
+                  Text('Manage your operational staff and their active credentials.', 
+                    style: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 13, fontWeight: FontWeight.w500)),
                 ],
               ),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddMemberScreen())),
                 icon: const Icon(Icons.add_rounded, size: 20),
-                label: const Text('Add Personnel'),
+                label: const Text('ONBOARD PERSONNEL', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                ),
               ),
             ],
           ),
@@ -123,26 +126,26 @@ class MemberListScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      member.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      member.name.toUpperCase(),
+                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 0.5),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'ID: ${member.employeeId}',
-                      style: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 12, fontWeight: FontWeight.w600),
+                      'ID: ${member.employeeId.toUpperCase()}',
+                      style: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withOpacity(0.04),
                         borderRadius: BorderRadius.circular(100),
                       ),
                       child: Text(
                         member.salaryType.name.toUpperCase(),
-                        style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                        style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: Colors.black45, letterSpacing: 1),
                       ),
                     ),
                   ],

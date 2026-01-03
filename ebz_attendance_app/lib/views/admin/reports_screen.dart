@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../providers/report_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../models/attendance_record.dart';
+import '../../widgets/charts/attendance_trend_chart.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -31,13 +32,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Operational Analytics',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
                   ),
                   const SizedBox(height: 8),
-                  Text('Comprehensive attendance data and system performance reports.', 
-                    style: Theme.of(context).textTheme.bodyMedium),
+                  Text('Comprehensive attendance logs and system performance metrics.', 
+                    style: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 13, fontWeight: FontWeight.w500)),
                 ],
               ),
               const Spacer(),
@@ -46,8 +47,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   final path = await reportProvider.exportMonthlyReport(_selectedDate);
                   if (path != null && mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Report successfully exported: $path'),
+                      const SnackBar(
+                        content: Text('ANALYTICS EXPORTED SUCCESSFULLY', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
                         behavior: SnackBarBehavior.floating,
                         backgroundColor: Colors.black,
                       ),
@@ -56,8 +57,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 },
                 icon: reportProvider.isExporting 
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.description_rounded, size: 20),
-                label: const Text('Export Analytics (.xlsx)'),
+                  : const Icon(Icons.download_rounded, size: 20),
+                label: const Text('DEPLOY ANALYTICS (XLSX)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                ),
               ),
             ],
           ),
@@ -66,6 +70,33 @@ class _ReportsScreenState extends State<ReportsScreen> {
           _buildFilterBar(),
           
           const SizedBox(height: 32),
+
+          StreamBuilder<List<AttendanceRecord>>(
+            stream: _firestoreService.getAllAttendance(_selectedDate),
+            builder: (context, snapshot) {
+              final records = snapshot.data ?? [];
+              if (records.isEmpty) return const SizedBox.shrink();
+
+              // Calculate daily counts for the month
+              final dailyData = <DateTime, int>{};
+              final daysInMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
+              
+              for (int i = 1; i <= daysInMonth; i++) {
+                final date = DateTime(_selectedDate.year, _selectedDate.month, i);
+                final count = records.where((r) => 
+                  r.date.day == i && r.date.month == _selectedDate.month && r.date.year == _selectedDate.year
+                ).length;
+                dailyData[date] = count;
+              }
+
+              return Column(
+                children: [
+                  AttendanceTrendChart(dailyData: dailyData),
+                  const SizedBox(height: 40),
+                ],
+              );
+            },
+          ),
           
           Expanded(child: _buildAttendanceList()),
         ],

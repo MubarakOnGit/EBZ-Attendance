@@ -72,11 +72,10 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
       await _firestoreService.saveRules(updatedRules);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Settings updated successfully!'),
-            backgroundColor: Colors.teal,
+          const SnackBar(
+            content: Text('PROTOCOLS UPDATED', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 2)),
+            backgroundColor: Colors.black,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
       }
@@ -107,20 +106,23 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                   const Text(
                     'Operational Rules',
-                    style: Theme.of(context).textTheme.headlineMedium,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, letterSpacing: -1),
                   ),
                   const SizedBox(height: 8),
                   Text('Configure office protocols, compliance metrics, and payroll logic.', 
-                    style: Theme.of(context).textTheme.bodyMedium),
+                    style: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 13, fontWeight: FontWeight.w500)),
                 ],
               ),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: _saveRules,
-                icon: const Icon(Icons.check_circle_outline_rounded, size: 20),
-                label: const Text('Update Protocols'),
+                icon: const Icon(Icons.shield_outlined, size: 20),
+                label: const Text('DEPLOY PROTOCOLS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                ),
               ),
             ],
           ),

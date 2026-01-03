@@ -174,7 +174,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

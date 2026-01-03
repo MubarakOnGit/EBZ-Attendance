@@ -7,6 +7,14 @@ import '../../providers/attendance_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../models/user_account.dart';
 import '../../models/attendance_record.dart';
+import '../../widgets/enhanced_stat_card.dart';
+import '../../widgets/live_activity_indicator.dart';
+import '../../widgets/charts/attendance_trend_chart.dart';
+import '../../widgets/charts/status_distribution_chart.dart';
+import '../../widgets/charts/peak_hours_chart.dart';
+import '../../widgets/live_clock.dart';
+import '../../widgets/animated_entrance.dart';
+import '../../widgets/top_performers.dart';
 import 'member_list_screen.dart';
 import 'rules_config_screen.dart';
 import 'reports_screen.dart';
@@ -175,86 +183,242 @@ class AdminOverview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Operational Overview',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Systems are active and monitoring real-time activity.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-              const Spacer(),
-              _buildDateBadge(),
-            ],
+          AnimatedEntrance(
+            delay: const Duration(milliseconds: 200),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Operational Overview',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const LiveActivityIndicator(isActive: true, color: Colors.green, size: 8),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Systems online • Real-time monitoring active',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                const LiveClock(),
+              ],
+            ),
           ),
           const SizedBox(height: 60),
           
-          LayoutBuilder(
-            builder: (context, constraints) {
-              int crossAxisCount = constraints.maxWidth > 1200 ? 4 : (constraints.maxWidth > 700 ? 2 : 1);
-              return GridView(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: 32,
-                  mainAxisSpacing: 32,
-                  childAspectRatio: 1.5,
-                ),
-                children: [
-                  StreamBuilder<QuerySnapshot>(
-                    stream: db.collection('users').where('role', isEqualTo: 1).snapshots(),
-                    builder: (context, snapshot) => StatCard(
-                      title: 'Personnel',
-                      value: snapshot.hasData ? snapshot.data!.docs.length.toString() : '...',
-                      icon: Icons.people_outline_rounded,
-                    ),
-                  ),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: db.collection('attendance')
-                        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-                        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      int clockedIn = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                      return StatCard(
-                        title: 'Active Today',
-                        value: clockedIn.toString(),
-                        icon: Icons.check_circle_outline_rounded,
+          // Enhanced Stat Cards with trends
+          StreamBuilder<QuerySnapshot>(
+            stream: db.collection('users').where('role', isEqualTo: 1).snapshots(),
+            builder: (context, usersSnapshot) {
+              return StreamBuilder<QuerySnapshot>(
+                stream: db.collection('attendance')
+                    .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+                    .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+                    .snapshots(),
+                builder: (context, attendanceSnapshot) {
+                  final totalPersonnel = usersSnapshot.hasData ? usersSnapshot.data!.docs.length : 0;
+                  final todayRecords = attendanceSnapshot.hasData
+                      ? attendanceSnapshot.data!.docs
+                          .map((doc) => AttendanceRecord.fromMap(doc.data() as Map<String, dynamic>))
+                          .toList()
+                      : <AttendanceRecord>[];
+
+                  final activeToday = todayRecords.length;
+                  final lateToday = todayRecords.where((r) => r.status == AttendanceStatus.late).length;
+                  final onTimeToday = todayRecords.where((r) => r.status == AttendanceStatus.present).length;
+                  final lunchActive = todayRecords.where((r) => r.lunchOut != null && r.lunchIn == null).length;
+
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      int crossAxisCount = constraints.maxWidth > 1400 ? 5 : (constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 600 ? 2 : 1));
+                      return GridView(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 24,
+                          childAspectRatio: 1.4,
+                        ),
+                        children: [
+                          AnimatedEntrance(
+                            delay: const Duration(milliseconds: 300),
+                            child: EnhancedStatCard(
+                              title: 'Personnel',
+                              value: totalPersonnel.toString(),
+                              icon: Icons.people_outline_rounded,
+                              trend: '100%',
+                              isPositive: true,
+                              percentageChange: 'TOTAL',
+                            ),
+                          ),
+                          AnimatedEntrance(
+                            delay: const Duration(milliseconds: 400),
+                            child: EnhancedStatCard(
+                              title: 'Active Today',
+                              value: activeToday.toString(),
+                              icon: Icons.check_circle_outline_rounded,
+                              trend: totalPersonnel > 0 ? '${((activeToday / totalPersonnel) * 100).toStringAsFixed(0)}%' : '0%',
+                              isPositive: true,
+                              percentageChange: 'PRESENT',
+                            ),
+                          ),
+                          AnimatedEntrance(
+                            delay: const Duration(milliseconds: 500),
+                            child: EnhancedStatCard(
+                              title: 'On Time',
+                              value: onTimeToday.toString(),
+                              icon: Icons.schedule_rounded,
+                              trend: activeToday > 0 ? '${((onTimeToday / activeToday) * 100).toStringAsFixed(0)}%' : '0%',
+                              isPositive: true,
+                              percentageChange: 'PUNCTUAL',
+                            ),
+                          ),
+                          AnimatedEntrance(
+                            delay: const Duration(milliseconds: 600),
+                            child: EnhancedStatCard(
+                              title: 'On Break',
+                              value: lunchActive.toString(),
+                              icon: Icons.coffee_rounded,
+                              trend: activeToday > 0 ? '${((lunchActive / activeToday) * 100).toStringAsFixed(0)}%' : '0%',
+                              isPositive: true,
+                              percentageChange: 'LUNCH',
+                            ),
+                          ),
+                          AnimatedEntrance(
+                            delay: const Duration(milliseconds: 700),
+                            child: EnhancedStatCard(
+                              title: 'Exceptions',
+                              value: lateToday.toString(),
+                              icon: Icons.error_outline_rounded,
+                              trend: activeToday > 0 ? '${((lateToday / activeToday) * 100).toStringAsFixed(0)}%' : '0%',
+                              isPositive: false,
+                              percentageChange: 'LATE',
+                            ),
+                          ),
+                        ],
                       );
                     },
+                  );
+                },
+              );
+            },
+          ),
+          
+          const SizedBox(height: 60),
+
+          // Charts Section
+          StreamBuilder<QuerySnapshot>(
+            stream: db.collection('attendance').snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final allRecords = snapshot.data!.docs
+                  .map((doc) => AttendanceRecord.fromMap(doc.data() as Map<String, dynamic>))
+                  .toList();
+
+              // Calculate 7-day trend
+              final sevenDaysAgo = today.subtract(const Duration(days: 6));
+              final dailyData = <DateTime, int>{};
+              for (int i = 0; i < 7; i++) {
+                final date = DateTime(sevenDaysAgo.year, sevenDaysAgo.month, sevenDaysAgo.day + i);
+                final count = allRecords.where((r) {
+                  final recordDate = r.date;
+                  return recordDate.year == date.year &&
+                      recordDate.month == date.month &&
+                      recordDate.day == date.day;
+                }).length;
+                dailyData[date] = count;
+              }
+
+              // Calculate hourly data for today
+              final hourlyData = <int, int>{};
+              final todayRecords = allRecords.where((r) {
+                final recordDate = r.date;
+                return recordDate.year == today.year &&
+                    recordDate.month == today.month &&
+                    recordDate.day == today.day;
+              }).toList();
+
+              for (final record in todayRecords) {
+                if (record.checkIn != null) {
+                  final hour = record.checkIn!.hour;
+                  hourlyData[hour] = (hourlyData[hour] ?? 0) + 1;
+                }
+              }
+
+              // Status distribution
+              final onTimeCount = todayRecords.where((r) => r.status == AttendanceStatus.present).length;
+              final lateCount = todayRecords.where((r) => r.status == AttendanceStatus.late).length;
+              final absentCount = 0; // We only have records for those who checked in
+
+              return Column(
+                children: [
+                  // Attendance Trend Chart
+                  AnimatedEntrance(
+                    delay: const Duration(milliseconds: 800),
+                    child: AttendanceTrendChart(dailyData: dailyData),
                   ),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: db.collection('attendance')
-                        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-                        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-                        .where('status', isEqualTo: 1) // Assuming 1 is Late
-                        .snapshots(),
-                    builder: (context, snapshot) => StatCard(
-                      title: 'Exceptions',
-                      value: snapshot.hasData ? snapshot.data!.docs.length.toString() : '...',
-                      icon: Icons.error_outline_rounded,
-                    ),
-                  ),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: db.collection('attendance')
-                        .where('isLunchOut', isEqualTo: true)
-                        .where('isLunchIn', isEqualTo: false)
-                        .snapshots(),
-                    builder: (context, snapshot) => StatCard(
-                      title: 'On Break',
-                      value: snapshot.hasData ? snapshot.data!.docs.length.toString() : '...',
-                      icon: Icons.coffee_rounded,
-                    ),
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Status Distribution and Peak Hours
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth > 1000) {
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: AnimatedEntrance(
+                                delay: const Duration(milliseconds: 900),
+                                child: StatusDistributionChart(
+                                  onTimeCount: onTimeCount,
+                                  lateCount: lateCount,
+                                  absentCount: absentCount,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 40),
+                            Expanded(
+                              child: AnimatedEntrance(
+                                delay: const Duration(milliseconds: 1000),
+                                child: PeakHoursChart(hourlyData: hourlyData),
+                              ),
+                            ),
+                          ],
+                        );
+                      } else {
+                        return Column(
+                          children: [
+                            AnimatedEntrance(
+                              delay: const Duration(milliseconds: 900),
+                              child: StatusDistributionChart(
+                                onTimeCount: onTimeCount,
+                                lateCount: lateCount,
+                                absentCount: absentCount,
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                            AnimatedEntrance(
+                              delay: const Duration(milliseconds: 1000),
+                              child: PeakHoursChart(hourlyData: hourlyData),
+                            ),
+                          ],
+                        );
+                      }
+                    },
                   ),
                 ],
               );
@@ -262,7 +426,47 @@ class AdminOverview extends StatelessWidget {
           ),
           
           const SizedBox(height: 60),
-          _buildRecentActivitySection(context, db),
+
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth > 1100) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2, 
+                      child: AnimatedEntrance(
+                        delay: const Duration(milliseconds: 1100),
+                        child: _buildRecentActivitySection(context, db),
+                      ),
+                    ),
+                    const SizedBox(width: 40),
+                    Expanded(
+                      flex: 1, 
+                      child: AnimatedEntrance(
+                        delay: const Duration(milliseconds: 1200),
+                        child: const TopPerformersWidget(),
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                return Column(
+                  children: [
+                    AnimatedEntrance(
+                      delay: const Duration(milliseconds: 1100),
+                      child: _buildRecentActivitySection(context, db),
+                    ),
+                    const SizedBox(height: 40),
+                    AnimatedEntrance(
+                      delay: const Duration(milliseconds: 1200),
+                      child: const TopPerformersWidget(),
+                    ),
+                  ],
+                );
+              }
+            },
+          ),
         ],
       ),
     );
@@ -336,20 +540,30 @@ class AdminOverview extends StatelessWidget {
                       final record = records.where((r) => r.userId == member.uid).firstOrNull;
                       bool isCheckIn = record != null;
 
-                      return Padding(
+                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Row(
                           children: [
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.03),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Center(
-                                child: Text(member.name[0], style: const TextStyle(fontWeight: FontWeight.w900)),
-                              ),
+                            Stack(
+                              children: [
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.03),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Text(member.name[0], style: const TextStyle(fontWeight: FontWeight.w900)),
+                                  ),
+                                ),
+                                if (isCheckIn)
+                                  const Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: LiveActivityIndicator(isActive: true, color: Colors.green, size: 10),
+                                  ),
+                              ],
                             ),
                             const SizedBox(width: 24),
                             Expanded(
