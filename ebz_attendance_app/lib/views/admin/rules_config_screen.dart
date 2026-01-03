@@ -147,11 +147,7 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
                           });
                         }),
                         const SizedBox(height: 40),
-                        _buildTimeRow('Rest Interval', _rules!.lunchStartTime, _rules!.lunchEndTime, (start, end) {
-                          setState(() {
-                            _rules = _copyRulesWith(lunchStartTime: start, lunchEndTime: end);
-                          });
-                        }),
+                        _buildInputField(label: 'Break Allocation (Minutes)', controller: _lunchLimitController, icon: Icons.restaurant_rounded),
                       ],
                     ),
                   ),
@@ -230,11 +226,9 @@ class _RulesConfigScreenState extends State<RulesConfigScreen> {
                           children: [
                             Expanded(child: _buildInputField(label: 'Grace Offset (M)', controller: _graceController, icon: Icons.timer_outlined)),
                             const SizedBox(width: 20),
-                            Expanded(child: _buildInputField(label: 'Max Break (M)', controller: _lunchLimitController, icon: Icons.restaurant_rounded)),
+                            Expanded(child: _buildInputField(label: 'Net Rate (M)', controller: _deductionController, icon: Icons.money_off_csred_rounded)),
                           ],
                         ),
-                        const SizedBox(height: 24),
-                        _buildInputField(label: 'Adjustment Rate (Per Minute)', controller: _deductionController, icon: Icons.money_off_csred_rounded),
                       ],
                     ),
                   ),
